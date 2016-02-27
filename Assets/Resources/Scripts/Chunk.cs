@@ -72,12 +72,46 @@ public class Chunk : MonoBehaviour {
 
     public void destroyBlock(Vector3 pos)
     {
-       print(pos + ", " + World.currentWorld.playerTransform.position);
-       blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z )] = BlockType.Air;
+        blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z)] = BlockType.Air;
         StartCoroutine(CreateMesh());
+
+        //If it is a block at the chunkedge a neighbourchunk must be updated too
+        Chunk c = findNeighbourChunk(pos);
+        if (c != null)
+        {
+            StartCoroutine(c.CreateMesh());
+        }
     }
 
 
+    /*
+     * If the block is at the chunkedge it returns the neighbourchunk
+     */
+    public Chunk findNeighbourChunk(Vector3 pos)
+    {
+        //x-border
+        if ((int)pos.x == 0)
+        {
+            return World.findChunk(new Vector3(this.pos.x - size.x, 0, this.pos.z));
+        }
+        if ((int)pos.x == size.x - 1)
+        {
+            return World.findChunk(new Vector3(this.pos.x + size.x, 0, this.pos.z));
+        }
+
+        //z-border
+        if ((int)pos.z == 0)
+        {
+            return World.findChunk(new Vector3(this.pos.x, 0, this.pos.z - size.z));
+        }
+        if ((int)pos.z == size.z - 1)
+        {
+            return World.findChunk(new Vector3(this.pos.x, 0, this.pos.z + size.z));
+        }
+
+        //The block is not at the chunkedge
+        return null;
+    }
 
 
     //Create the blockarray
