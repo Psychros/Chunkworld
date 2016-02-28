@@ -312,7 +312,7 @@ public class Chunk : MonoBehaviour {
     {
         int brick = GetByte(x, y, z);
 
-        if(brick == (int)BlockType.Air || brick == (int)(BlockType.Glass))
+        if(brick == (int)BlockType.Air || brick == (int)(BlockType.Glass) || brick == (int)(BlockType.Leaves))
                 return true;
         else
             return false;
