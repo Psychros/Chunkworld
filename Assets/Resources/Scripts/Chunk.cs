@@ -69,7 +69,7 @@ public class Chunk : MonoBehaviour {
 
 
 
-
+    //Removes a block
     public void destroyBlock(Vector3 pos)
     {
         blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z)] = BlockType.Air;
@@ -81,6 +81,34 @@ public class Chunk : MonoBehaviour {
         {
             StartCoroutine(c.CreateMesh());
         }
+    }
+
+
+
+    //Sets a block
+    public void setBlock(Vector3 pos, BlockType id)
+    {
+        //Removes the block if it is air
+        if (id == BlockType.Air)
+        {
+            destroyBlock(pos);
+            return;
+        }
+
+        //Sets a new block
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+        int z = (int)pos.z;
+
+        blocks[x, y, z] = id;
+        StartCoroutine(CreateMesh());
+
+        //Recalculate the neighbourchunk if the block is at the chunkborder
+        /*Chunk c = findNeighbourChunk(pos);
+        if (c != null)
+        {
+            StartCoroutine(c.CreateMesh());
+        }*/
     }
 
 

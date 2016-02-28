@@ -6,17 +6,19 @@ public class RayCastManager : MonoBehaviour {
 	//Test for something in front of the player with a raycast 
 	public static RaycastHit startRayCast(float distance){
 		RaycastHit hit;
-		Vector3 direction = World.currentWorld.playerTransform.TransformDirection(Vector3.forward);
-		Vector3 position = World.currentWorld.playerTransform.position;
-		Physics.Raycast(position, direction, out hit, distance);
+        Transform cam = Camera.main.transform;
+        Vector3 direction = cam.forward;
+        Vector3 position = cam.position;
+        Physics.Raycast(position, direction, out hit, distance);
 
 		return hit;
 	}
 
 	//Test for terrain in front of the player with a raycast 
 	public static RaycastHit[] startRayCastAllHits(float distance){
-		Vector3 direction = World.currentWorld.playerTransform.TransformDirection(Vector3.forward);
-		Vector3 position = World.currentWorld.playerTransform.position;
+        Transform cam = Camera.main.transform;
+        Vector3 direction = cam.forward;
+		Vector3 position = cam.position;
 
 		return Physics.RaycastAll(position, direction, distance);;
 	}
