@@ -5,7 +5,7 @@ using SimplexNoise;
 
 public class Chunk : MonoBehaviour {
 
-    public static Vector3 standardSize = new Vector3(20, 30, 20);
+    public static Vector3 standardSize = new Vector3(20, 60, 20);
     public static int minHeight = 10;
     public const float UV_OFFSET = 0.001f;
     public const float UV_SIZE = 1f / 16;
@@ -154,7 +154,7 @@ public class Chunk : MonoBehaviour {
 
                 float noiseValue = Noise.Generate(noiseX/6, noiseZ/6);
                 noiseValue += 1;
-                noiseValue *= (size.y - minHeight)/2;
+                noiseValue *= (30 - minHeight)/2;
                 noiseValue += minHeight;
 
                 //Generate Stone

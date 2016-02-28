@@ -13,15 +13,30 @@ public class InputManager : MonoBehaviour {
 	public KeyCode destroyBlock = KeyCode.Mouse0;
     public KeyCode setBlock     = KeyCode.Mouse1;
 
+    //Inventoryslots
+    public BlockType selectedBlockType = BlockType.Stone;
+    public KeyCode slot0 = KeyCode.Alpha0;
+    public KeyCode slot1 = KeyCode.Alpha1;
+    public KeyCode slot2 = KeyCode.Alpha2;
+    public KeyCode slot3 = KeyCode.Alpha3;
+    public KeyCode slot4 = KeyCode.Alpha4;
+    public KeyCode slot5 = KeyCode.Alpha5;
+    public KeyCode slot6 = KeyCode.Alpha6;
+    public KeyCode slot7 = KeyCode.Alpha7;
+    public KeyCode slot8 = KeyCode.Alpha8;
+    public KeyCode slot9 = KeyCode.Alpha9;
+
 
     void Start () {
         InputManager.instance = this;
     }
 
 
-    void Update () {
-		//Destroy a block
-		if(Input.GetKeyDown(destroyBlock)){
+    void Update()
+    {
+        //Destroy a block
+        if (Input.GetKeyDown(destroyBlock))
+        {
             RaycastHit hit = RayCastManager.rayCastBlock(actiondistance);
             if (hit.point != Vector3.zero)
             {
@@ -63,7 +78,7 @@ public class InputManager : MonoBehaviour {
 
                 //Select the correct chunk if the selected block is at the edge
                 //x-border
-                if(pos.x < 0)
+                if (pos.x < 0)
                 {
                     c = World.findChunk(new Vector3(c.pos.x - Chunk.standardSize.x, 0, c.pos.z));
                     pos.x = Chunk.standardSize.x - 1;
@@ -85,13 +100,30 @@ public class InputManager : MonoBehaviour {
                     c = World.findChunk(new Vector3(c.pos.x, 0, c.pos.z + Chunk.standardSize.z));
                     pos.z = 0;
                 }
-                c.setBlock(pos, BlockType.Stone);
+
+                //Place the block
+                c.setBlock(pos, selectedBlockType);
 
                 //Update the neighbourchunk
-                if(c != d)
+                if (c != d)
                     StartCoroutine(d.CreateMesh());
             }
         }
+
+
+        /*
+         * Inventoryslots
+         */
+        if (Input.GetKeyDown(slot1))
+            selectedBlockType = BlockType.Stone;
+        if (Input.GetKeyDown(slot2))
+            selectedBlockType = BlockType.Dirt;
+        if (Input.GetKeyDown(slot3))
+            selectedBlockType = BlockType.Grass;
+        if (Input.GetKeyDown(slot4))
+            selectedBlockType = BlockType.Wood;
+        if (Input.GetKeyDown(slot5))
+            selectedBlockType = BlockType.Leaves;
     }
 
     public static Vector3 substractVector3(Vector3 a, Vector3 b)
