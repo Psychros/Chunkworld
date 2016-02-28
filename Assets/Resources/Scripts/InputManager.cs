@@ -124,6 +124,8 @@ public class InputManager : MonoBehaviour {
             selectedBlockType = BlockType.Wood;
         if (Input.GetKeyDown(slot5))
             selectedBlockType = BlockType.Leaves;
+        if (Input.GetKeyDown(slot6))
+            selectedBlockType = BlockType.Glass;
     }
 
     public static Vector3 substractVector3(Vector3 a, Vector3 b)
