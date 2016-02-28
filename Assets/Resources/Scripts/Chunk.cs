@@ -102,13 +102,6 @@ public class Chunk : MonoBehaviour {
 
         blocks[x, y, z] = id;
         StartCoroutine(CreateMesh());
-
-        //Recalculate the neighbourchunk if the block is at the chunkborder
-        /*Chunk c = findNeighbourChunk(pos);
-        if (c != null)
-        {
-            StartCoroutine(c.CreateMesh());
-        }*/
     }
 
 

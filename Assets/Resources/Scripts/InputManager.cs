@@ -49,6 +49,7 @@ public class InputManager : MonoBehaviour {
             {
 
                 Chunk c = hit.transform.gameObject.GetComponent<Chunk>();
+                Chunk d = c;   //Copy of the selected chunk. Both chunks must be updated
                 Vector3 pos = substractVector3(hit.point, c.pos);
 
                 //The viewdirection has an influence on the correct blockselecting
@@ -60,7 +61,35 @@ public class InputManager : MonoBehaviour {
                 if (direction.z >= 0)
                     pos.z -= 0.001f;
 
+                //Select the correct chunk if the selected block is at the edge
+                //x-border
+                if(pos.x < 0)
+                {
+                    c = World.findChunk(new Vector3(c.pos.x - Chunk.standardSize.x, 0, c.pos.z));
+                    pos.x = Chunk.standardSize.x - 1;
+                }
+                else if (pos.x >= Chunk.standardSize.x)
+                {
+                    c = World.findChunk(new Vector3(c.pos.x + Chunk.standardSize.x, 0, c.pos.z));
+                    pos.x = 0;
+                }
+
+                //z-border
+                if (pos.z < 0)
+                {
+                    c = World.findChunk(new Vector3(c.pos.x, 0, c.pos.z - Chunk.standardSize.z));
+                    pos.z = Chunk.standardSize.z - 1;
+                }
+                else if (pos.z >= Chunk.standardSize.z)
+                {
+                    c = World.findChunk(new Vector3(c.pos.x, 0, c.pos.z + Chunk.standardSize.z));
+                    pos.z = 0;
+                }
                 c.setBlock(pos, BlockType.Stone);
+
+                //Update the neighbourchunk
+                if(c != d)
+                    StartCoroutine(d.CreateMesh());
             }
         }
     }
