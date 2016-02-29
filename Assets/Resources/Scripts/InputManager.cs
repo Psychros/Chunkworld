@@ -8,6 +8,8 @@ public class InputManager : MonoBehaviour {
 
 	public static InputManager instance { get; private set; }
     public int actiondistance = 10;  //Minimum distance the player needs to destroy/place a block
+    public float timePlaceBlock = 0.25f;
+    private float timerPlaceBlock = 0;
 
 	//All KeyCodes
 	public KeyCode destroyBlock = KeyCode.Mouse0;   //Destroy a block
@@ -44,6 +46,20 @@ public class InputManager : MonoBehaviour {
         if (Input.GetMouseButtonDown(1))
         {
             placeBlock();
+        }
+        if (Input.GetMouseButton(1))//The player does't have to click for every block again
+        {
+            if(timerPlaceBlock >= timePlaceBlock)
+            {
+                placeBlock();
+                timerPlaceBlock = 0;
+            }
+
+            timerPlaceBlock += Time.deltaTime;
+        }
+        if (Input.GetMouseButtonUp(1))
+        {
+            timerPlaceBlock = 0;
         }
 
 
