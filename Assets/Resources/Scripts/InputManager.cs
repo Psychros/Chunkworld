@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityStandardAssets.Characters.FirstPerson;
 using System;
+using System.Collections.Generic;
 
 public class InputManager : MonoBehaviour {
 
@@ -10,9 +11,18 @@ public class InputManager : MonoBehaviour {
     public int actiondistance = 10;  //Minimum distance the player needs to destroy/place a block
     public float timePlaceBlock = 0.25f;
     private float timerPlaceBlock = 0;
+    public float timeDestroyBlock = 1f;
+    private float timerDestroyBlock = 0;
 
-	//All KeyCodes
-	public KeyCode destroyBlock = KeyCode.Mouse0;   //Destroy a block
+    //Selectionblock
+    private int selectionTexture = 0;
+    public const float UV_OFFSET = 0.0001f;
+    public const float UV_SIZE = 1f / 5;
+    private GameObject selectionBlock;
+    public Material selectionMaterial;
+
+    //All KeyCodes
+    public KeyCode destroyBlock = KeyCode.Mouse0;   //Destroy a block
     public KeyCode setBlock     = KeyCode.Mouse1;   //Place a block
 
     //Inventoryslots
@@ -31,15 +41,32 @@ public class InputManager : MonoBehaviour {
 
     void Start () {
         InputManager.instance = this;
+
+        //Initialize the selectionBlock
+        selectionBlock = new GameObject();
+        selectionBlock.SetActive(false);
+        MeshRenderer mR = selectionBlock.AddComponent<MeshRenderer>();
+        selectionBlock.AddComponent<MeshFilter>();
+        mR.material = selectionMaterial;
     }
 
 
     void Update()
     {
         //Destroy a block
-        if (Input.GetKeyDown(destroyBlock))
+        if (Input.GetKey(destroyBlock))                 //The player needs a time for destro
         {
-            removeBlock();
+            if (timerDestroyBlock >= timeDestroyBlock)
+            {
+                removeBlock();
+                timerDestroyBlock = 0;
+            }
+
+            timerDestroyBlock += Time.deltaTime;
+        }
+        if (Input.GetKeyUp(destroyBlock))
+        {
+            timerDestroyBlock = 0;
         }
 
         //Set a block
@@ -49,7 +76,7 @@ public class InputManager : MonoBehaviour {
         }
         if (Input.GetMouseButton(1))//The player does't have to click for every block again
         {
-            if(timerPlaceBlock >= timePlaceBlock)
+            if (timerPlaceBlock >= timePlaceBlock)
             {
                 placeBlock();
                 timerPlaceBlock = 0;
@@ -78,6 +105,10 @@ public class InputManager : MonoBehaviour {
             selectedBlockType = BlockType.Leaves;
         if (Input.GetKeyDown(slot6))
             selectedBlockType = BlockType.Glass;
+
+
+        //Recalculate the selected Block and place the selection
+        //recalculateSelectionBlock();
     }
 
     public static Vector3 substractVector3(Vector3 a, Vector3 b)
@@ -156,6 +187,128 @@ public class InputManager : MonoBehaviour {
             //Update the neighbourchunk
             if (c != d)
                 StartCoroutine(d.CreateMesh());
+        }
+    }
+
+
+
+
+    //Recalculate the selected Block and place the selection
+    public void recalculateSelectionBlock()
+    {
+        RaycastHit hit = RayCastManager.rayCastBlock(actiondistance);
+        if (hit.point != Vector3.zero)
+        {
+            //The viewdirection has an influence on the correct blockselecting
+            Vector3 direction = World.currentWorld.playerTransform.TransformDirection(Vector3.forward);
+            Vector3 pos = hit.point;
+            string changed = "";
+            if (direction.x < 0 && pos.x - (int)(pos.x + 0.0001f) <= 0.0001f)
+            {
+                pos.x--;
+                changed = "x";
+            }
+            if (direction.y < 0 && pos.y - (int)pos.y <= 0.0001f)
+            {
+                pos.y--;
+                changed = "y";
+            }
+            if (direction.z < 0 && pos.z - (int)(pos.z+0.0001f) <= 0.0001f)
+            {
+                pos.z--;
+                changed = "z";
+            }
+            if (direction.z > 0 && pos.z - (int)(pos.z + 0.0001f) <= 0.0001f && pos.z >= 0)
+            {
+                pos.z++;
+                changed = "z";
+            }
+            //print("Hit:" + hit.point + ", Block:" + new Vector3((int)pos.x, (int)pos.y, (int)pos.z) + ", Direction:" + direction + "changed: " + changed);
+
+            //Correct the coords if the player is at negative coords
+            if (hit.point.x < 0 && direction.x > 0)
+            {
+                pos.x--;
+            }
+            if (hit.point.z < 0 && direction.z > 0)
+            {
+                pos.z--;
+            }
+
+            Mesh mesh = new Mesh();
+            List<Vector3> verts = new List<Vector3>();
+            List<Vector2> uvs = new List<Vector2>();
+            List<int> tris = new List<int>();
+
+            Vector3 scale = new Vector3(1f, 1f, 1f);
+
+            // Left wall
+            BuildFace(new Vector3(0, 0, 0), Vector3.Scale(Vector3.up, scale), Vector3.Scale(Vector3.forward, scale), false, ref verts, ref uvs, ref tris);
+            // Right wall
+            BuildFace(new Vector3(1, 0, 0), Vector3.Scale(Vector3.up, scale), Vector3.Scale(Vector3.forward, scale), true, ref verts, ref uvs, ref tris);
+
+            // Bottom wall
+            BuildFace(new Vector3(0, 0, 0), Vector3.Scale(Vector3.forward, scale), Vector3.Scale(Vector3.right, scale), false, ref verts, ref uvs, ref tris);
+            // Top wall
+            BuildFace(new Vector3(0, 1, 0), Vector3.Scale(Vector3.forward, scale), Vector3.Scale(Vector3.right, scale), true, ref verts, ref uvs, ref tris);
+
+            // Back
+            BuildFace(new Vector3(0, 0, 0), Vector3.Scale(Vector3.up, scale), Vector3.Scale(Vector3.right, scale), true, ref verts, ref uvs, ref tris);
+            // Front
+            BuildFace(new Vector3(0, 0, 1), Vector3.Scale(Vector3.up, scale), Vector3.Scale(Vector3.right, scale), false, ref verts, ref uvs, ref tris);
+
+
+            //Add the information to the mesh
+            mesh.vertices = verts.ToArray();
+            mesh.uv = uvs.ToArray();
+            mesh.triangles = tris.ToArray();
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
+
+            //Add the mesh to the gameobject
+            MeshFilter filter = selectionBlock.GetComponent<MeshFilter>();
+            filter.sharedMesh = mesh;
+
+            selectionBlock.transform.position = new Vector3((int)(pos.x), (int)(pos.y), (int)(pos.z));
+            selectionBlock.SetActive(true);
+        }
+        else
+        {
+            selectionBlock.SetActive(false);
+        }
+    }
+
+    public virtual void BuildFace(Vector3 corner, Vector3 up, Vector3 right, bool reversed, ref List<Vector3> verts, ref List<Vector2> uvs, ref List<int> tris)
+    {
+        int index = verts.Count;
+
+        verts.Add(corner);
+        verts.Add(corner + up);
+        verts.Add(corner + up + right);
+        verts.Add(corner + right);
+
+        uvs.Add(new Vector2(selectionTexture * UV_SIZE, 1));
+        uvs.Add(new Vector2(selectionTexture * UV_SIZE, 0));
+        uvs.Add(new Vector2((selectionTexture + 1) * UV_SIZE - UV_OFFSET, 0));
+        uvs.Add(new Vector2((selectionTexture + 1) * UV_SIZE - UV_OFFSET, 1));
+
+        if (reversed)
+        {
+            tris.Add(index + 0);
+            tris.Add(index + 1);
+            tris.Add(index + 2);
+            tris.Add(index + 2);
+            tris.Add(index + 3);
+            tris.Add(index + 0);
+        }
+        else
+        {
+            tris.Add(index + 1);
+            tris.Add(index + 0);
+            tris.Add(index + 2);
+            tris.Add(index + 3);
+            tris.Add(index + 2);
+            tris.Add(index + 0);
         }
     }
 }

@@ -7,8 +7,9 @@ public class Chunk : MonoBehaviour {
 
     public static Vector3 standardSize = new Vector3(20, 60, 20);
     public static int minHeight = 10;
-    public const float UV_OFFSET = 0.0001f;
-    public const float UV_SIZE = 1f / 16;
+    public const float UVX_OFFSET = 0.0003f;
+    public const float UVY_OFFSET = 0.003f;
+    public const float UV_SIZE = 0.0625f;
     public Vector3 size
     {
         get;
@@ -277,7 +278,7 @@ public class Chunk : MonoBehaviour {
     }
 
 
-    public virtual void BuildFace(int brick, Vector3 corner, Vector3 up, Vector3 right, bool reversed, ref List<Vector3> verts, ref List<Vector2> uvs, ref List<int> tris, int uvX, int uvY)
+    public virtual void BuildFace(int brick, Vector3 corner, Vector3 up, Vector3 right, bool reversed, ref List<Vector3> verts, ref List<Vector2> uvs, ref List<int> tris, float uvX, float uvY)
     {
         int index = verts.Count;
         faceCount++;
@@ -287,10 +288,10 @@ public class Chunk : MonoBehaviour {
         verts.Add(corner + up + right);
         verts.Add(corner + right);
 
-        uvs.Add(new Vector2(uvX*UV_SIZE, 1-((uvY+1)* UV_SIZE - UV_OFFSET)));
-        uvs.Add(new Vector2(uvX* UV_SIZE, 1-uvY* UV_SIZE - UV_OFFSET));
-        uvs.Add(new Vector2((uvX + 1) * UV_SIZE - UV_OFFSET, 1 - uvY * UV_SIZE - UV_OFFSET));
-        uvs.Add(new Vector2((uvX + 1) * UV_SIZE - UV_OFFSET, 1-((uvY+1)* UV_SIZE - UV_OFFSET)));
+        uvs.Add(new Vector2(uvX * UV_SIZE + UVX_OFFSET, 1f - (uvY + 1f) * UV_SIZE + UVY_OFFSET));
+        uvs.Add(new Vector2(uvX * UV_SIZE + UVX_OFFSET, 1f - uvY * UV_SIZE - UVY_OFFSET));
+        uvs.Add(new Vector2((uvX + 1f) * UV_SIZE - UVX_OFFSET, 1f - uvY * UV_SIZE - UVY_OFFSET));
+        uvs.Add(new Vector2((uvX + 1f) * UV_SIZE - UVX_OFFSET, 1f - (uvY + 1f) * UV_SIZE + UVY_OFFSET));
 
         if (reversed)
         {
@@ -413,5 +414,16 @@ public class Chunk : MonoBehaviour {
         }
 
         return 0;
+    }
+
+
+    //Returns the ChunkPosition of this coordinate. There must be no existing chunk with this position
+    public static Vector3 roundChunkPos(Vector3 pos)
+    {
+        //Cuts the decimals of the first part
+        int x = (int)(pos.x / standardSize.x)*(int)standardSize.x;
+        int z = (int)(pos.z / standardSize.z) * (int)standardSize.z;
+
+        return new Vector3(x, 0, z);
     }
 }

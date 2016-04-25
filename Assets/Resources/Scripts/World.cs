@@ -23,9 +23,9 @@ public class World : MonoBehaviour {
         world = new List<Chunk>();
 
         //Generate startchunks
-        for (int x = -5; x <= 5; x++)
+        for (int x = -1; x <= 1; x++)
         {
-            for (int z = -5; z <= 5; z++)
+            for (int z = -1; z <= 1; z++)
             {
                 generateChunk(new Vector3((int)(x*Chunk.standardSize.x), 0, (int)(z * Chunk.standardSize.z)));
             }
