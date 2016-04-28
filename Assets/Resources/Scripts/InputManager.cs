@@ -202,28 +202,23 @@ public class InputManager : MonoBehaviour {
             //The viewdirection has an influence on the correct blockselecting
             Vector3 direction = World.currentWorld.playerTransform.TransformDirection(Vector3.forward);
             Vector3 pos = hit.point;
-            string changed = "";
             if (direction.x < 0 && pos.x - (int)(pos.x + 0.0001f) <= 0.0001f)
             {
                 pos.x--;
-                changed = "x";
             }
             if (direction.y < 0 && pos.y - (int)pos.y <= 0.0001f)
             {
                 pos.y--;
-                changed = "y";
             }
             if (direction.z < 0 && pos.z - (int)(pos.z+0.0001f) <= 0.0001f)
             {
                 pos.z--;
-                changed = "z";
             }
             if (direction.z > 0 && pos.z - (int)(pos.z + 0.0001f) <= 0.0001f && pos.z >= 0)
             {
                 pos.z++;
-                changed = "z";
             }
-            //print("Hit:" + hit.point + ", Block:" + new Vector3((int)pos.x, (int)pos.y, (int)pos.z) + ", Direction:" + direction + "changed: " + changed);
+           
 
             //Correct the coords if the player is at negative coords
             if (hit.point.x < 0 && direction.x > 0)

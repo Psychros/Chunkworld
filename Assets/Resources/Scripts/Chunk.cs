@@ -7,7 +7,7 @@ public class Chunk : MonoBehaviour {
 
     public static Vector3 standardSize = new Vector3(20, 60, 20);
     public static int minHeight = 10;
-    public const float UVX_OFFSET = 0.0003f;
+    public const float UVX_OFFSET = 0.0005f;
     public const float UVY_OFFSET = 0.003f;
     public const float UV_SIZE = 0.0625f;
     public Vector3 size
@@ -174,7 +174,7 @@ public class Chunk : MonoBehaviour {
             }
         }
 
-        generateTrees(5, 15);
+        generateTrees(3, 10);
        
     }
 
@@ -184,34 +184,38 @@ public class Chunk : MonoBehaviour {
         int r = minNumber + (int)(Random.value * (maxNumber-minNumber));
         for (int i = 0; i < r; i++)
         {
-            int x = (int)(Random.value * size.x);
+            Random.seed = Random.Range(int.MinValue, int.MaxValue);
+            int x = (int)(Random.value * size.x) ;
             int z = (int)(Random.value * size.z);
-
             int y = calculateHeight(x, z);
 
             //If the height is to high there will be an exception
             //Trees should not spawn on other trees
             if (y < size.y - 6 && blocks[x, y, z] != BlockType.Wood && blocks[x, y, z] != BlockType.Leaves)
             {
+                //Position des Chunks hinzurechnen
+
+                int[,,] tree = new int[5, 6, 5];
                 //Leaves
-                for (int x2 = -2; x2 < 2; x2++)
+                for (int k = 0; k < 5; k++)
                 {
-                    for (int z2 = -2; z2 < 2; z2++)
+                    for (int j = 0; j < 5; j++)
                     {
-                        if (x + x2 >= 0 && x + x2 < size.x && z + z2 >= 0 && z + z2 < size.z)
-                        {
-                            for (int y2 = 4; y2 < 7; y2++)
-                            {
-                                blocks[x + x2, y + y2, z + z2] = BlockType.Leaves;
-                            }
-                        }
+                        tree[k, 3, j] = (int)BlockType.Leaves;
+                        tree[k, 4, j] = (int)BlockType.Leaves;
+                        tree[k, 5, j] = (int)BlockType.Leaves;
                     }
                 }
+
                 //Wood
-                for (int j = 1; j < 6; j++)
+                for (int j = 0; j < 5; j++)
                 {
-                    blocks[x, y + j, z] = BlockType.Wood;
+                    tree[2, j, 2] = (int)BlockType.Wood;
                 }
+
+                //Create a new structure for the tree
+                Vector3 structurePos = new Vector3(x + this.pos.x, y, z + this.pos.z);
+                World.currentWorld.structures.Add(new Structure(structurePos, tree));
             }
         }
     }
@@ -406,7 +410,6 @@ public class Chunk : MonoBehaviour {
     //Calculates the ypos of the highest block at x/z
     public int calculateHeight(int x, int z)
     {
-        int n = 0;
         for (int y = (int)size.y-1; y > 0; y--)
         {
             if (blocks[x, y, z] != BlockType.Air)
@@ -420,10 +423,99 @@ public class Chunk : MonoBehaviour {
     //Returns the ChunkPosition of this coordinate. There must be no existing chunk with this position
     public static Vector3 roundChunkPos(Vector3 pos)
     {
-        //Cuts the decimals of the first part
-        int x = (int)(pos.x / standardSize.x)*(int)standardSize.x;
-        int z = (int)(pos.z / standardSize.z) * (int)standardSize.z;
+        float x = 0;
+        float z = 0;
+
+        if(pos.x < 0 && pos.x % standardSize.x < 0)
+        {
+            float x2 = pos.x % standardSize.x;
+            //The first part cuts the decimals
+            x = (int)(pos.x / standardSize.x) * standardSize.x - standardSize.x;
+        }
+        else
+        {
+            x = (int)(pos.x / standardSize.x) * standardSize.x;
+        }
+
+        if (pos.z < 0 && pos.z % standardSize.z < 0)
+        {
+            float z2 = pos.z % standardSize.z;
+            //The first part cuts the decimals
+            z = (int)(pos.z / standardSize.z) * standardSize.z - standardSize.z;
+        }
+        else
+        {
+            z = (int)(pos.z / standardSize.z) * standardSize.z;
+        }
 
         return new Vector3(x, 0, z);
+    }
+
+
+
+    //Place a part of the structure in the chunk
+    public void placeStructure(Structure structure)
+    {
+        //chunk position in the structurearray
+        Vector3 startPosition = pos - structure.pos;
+        //print("Startposition: " + startPosition + "  Chunkposition: " + pos + "  Structureposition: " + structure.pos);
+        float xNegative = 0,
+             zNegative = 0; 
+
+        //The values should only be positive
+        if (startPosition.x < 0) {
+            xNegative = -startPosition.x;
+            startPosition.x = 0;
+        }
+        if (startPosition.y < 0)
+        {
+            startPosition.y = -startPosition.y;
+        }
+        if (startPosition.z < 0) {
+            zNegative = -startPosition.z;
+            startPosition.z = 0;
+        }
+
+        //Calculates how big the structurepart in the chunk is
+        float xLength = structure.blocks.GetLength(0) - startPosition.x,
+              yLength = structure.blocks.GetLength(1),
+              zLength = structure.blocks.GetLength(2) - startPosition.z;
+        if (xLength > standardSize.x) xLength = standardSize.x;
+        if (yLength + startPosition.y >= standardSize.y) yLength = standardSize.y - startPosition.y;
+        if (zLength > standardSize.z) zLength = standardSize.z;
+       
+        //Adds this values to the blockposition when the structure doesn't start in the left bottom corner
+        float xStart = 0, zStart = 0;
+        if (xNegative != 0) {
+            xStart = xNegative;
+            xLength = Chunk.standardSize.x - xNegative;
+            //print("xNegative");
+            if (xLength > structure.blocks.GetLength(0)) xLength = structure.blocks.GetLength(0);
+        }
+        if (zNegative != 0) {
+            zStart = zNegative;
+            zLength = Chunk.standardSize.z - zNegative;
+            //print("zNegative");
+            if (zLength > structure.blocks.GetLength(2)) zLength = structure.blocks.GetLength(2);
+        }
+
+        //Place the structure
+        //print("xLength: " + xLength + "   yLength: " + yLength + "   zLength: " + zLength);
+        for (int x = 0; x < xLength; x++)
+        {
+            for (int y = 0; y < yLength; y++)
+            {
+                for (int z = 0; z < zLength; z++)
+                {
+                    Vector3 posBlock = new Vector3(x + xStart, startPosition.y + y, z + zStart);
+
+                    if (blocks[(int)posBlock.x, (int)posBlock.y, (int)posBlock.z] == (int)BlockType.Air)
+                    {
+                        //print("Startpos: " + startPosition + "   Chunkpos:" +  pos + "   Strucpos:" + structure.pos + "   Array: " +(int)(startPosition.x + x) + ", " + y + ", " + (int)(startPosition.z + z));
+                        setBlock(posBlock, (BlockType)structure.blocks[(int)(startPosition.x + x), y, (int)(startPosition.z + z)]);
+                    }
+                }
+            }
+        }
     }
 }
