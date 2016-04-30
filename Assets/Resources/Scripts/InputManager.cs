@@ -22,8 +22,9 @@ public class InputManager : MonoBehaviour {
     public Material selectionMaterial;
 
     //All KeyCodes
-    public KeyCode destroyBlock = KeyCode.Mouse0;   //Destroy a block
-    public KeyCode setBlock     = KeyCode.Mouse1;   //Place a block
+    public KeyCode destroyBlock    = KeyCode.Mouse0;   //Destroy a block
+    public KeyCode setBlock        = KeyCode.Mouse1;   //Place a block
+    public KeyCode activateLantern = KeyCode.F;        //Activate the lantern of the player
 
     //Inventoryslots
     public BlockType selectedBlockType = BlockType.Stone;
@@ -107,6 +108,11 @@ public class InputManager : MonoBehaviour {
             selectedBlockType = BlockType.Glass;
 
 
+        //Activate the lantern
+        if (Input.GetKeyDown(activateLantern))
+            World.currentWorld.lanternTransform.SetActive(!World.currentWorld.lanternTransform.activeInHierarchy);
+
+
         //Recalculate the selected Block and place the selection
         //recalculateSelectionBlock();
     }
@@ -133,7 +139,7 @@ public class InputManager : MonoBehaviour {
                 pos.y -= 0.001f;
             if (direction.z < 0)
                 pos.z -= 0.001f;
-            c.destroyBlock(pos);
+            c.destroyBlock(pos, true);
         }
     }
 
@@ -182,7 +188,7 @@ public class InputManager : MonoBehaviour {
             }
 
             //Place the block
-            c.setBlock(pos, selectedBlockType);
+            c.setBlock(pos, selectedBlockType, true);
 
             //Update the neighbourchunk
             if (c != d)

@@ -6,7 +6,7 @@ public class Structure{
     public int[,,] blocks;
     public List<Vector3> chunks = new List<Vector3>();  //x, y, z
 
-    public Structure(Vector3 pos, int[,,] blocks)
+    public Structure(Vector3 pos, ref int[,,] blocks)
     {
         this.pos = pos;
         this.blocks = blocks;
@@ -48,7 +48,7 @@ public class Structure{
             {
                 //Calculates the chunkPosition of the coordinate
                 Vector3 chunkPos = Chunk.roundChunkPos(new Vector3(pos.x + i * Chunk.standardSize.x, 0, pos.z + j * Chunk.standardSize.z));
-                Debug.Log("Structure: " + this.pos + "   Chunk: " + chunkPos + "i: " + i + "  j: " + j);
+                //Debug.Log("Structure: " + this.pos + "   Chunk: " + chunkPos + "i: " + i + "  j: " + j);
                 chunks.Add(chunkPos);
             }
         }

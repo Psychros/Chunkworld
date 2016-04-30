@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using SimplexNoise;
+using System.Diagnostics;
 
 public class World : MonoBehaviour {
 
@@ -10,38 +11,63 @@ public class World : MonoBehaviour {
     [HideInInspector] public List<Structure> structures = new List<Structure>();
     public Material blockMaterial;
     public Transform playerTransform;
+    public GameObject lanternTransform;
     private static Chunk selectedChunk = null;
+    
 
+    //Only for testing
+    Stopwatch watch = new Stopwatch();
+    Stopwatch watch2 = new Stopwatch();
 
-	void Start () {
+    void Start () {
+        watch.Start();
         //Make the cursor unvisible
         Cursor.visible = false;
 
-        currentWorld = this;
-        seed = Random.Range(0, int.MaxValue);
-        Noise.generateArray();
+        //Generate the structurearrays
+        Tree.generateTreeArray();
 
-        world = new List<Chunk>();
+        //Generate the startchunks
+        watch2.Start();
+        generateWorld();
+        watch2.Stop();
+        watch.Stop();
 
-        //Generate startchunks
-        for (int x = -3; x <= 3; x++)
-        {
-            for (int z = -3; z <= 3; z++)
-            {
-                generateChunk(new Vector3((int)(x*Chunk.standardSize.x), 0, (int)(z * Chunk.standardSize.z)));
-            }
-        }
 
-        //Calculate the mesh of the chunk
-        foreach (Chunk chunk in world) {
-            StartCoroutine(chunk.CreateMesh());
-        }
+        print("Zeit: " + watch.ElapsedMilliseconds);
+        print("Zeit2: " + watch2.ElapsedMilliseconds);
     }
 	
 	void Update () {
 	
 	}
 
+
+
+    public void generateWorld()
+    {
+        currentWorld = this;
+        seed = Random.Range(0, int.MaxValue);
+        Random.seed = seed;
+        Noise.generateArray();
+
+        world = new List<Chunk>();
+
+        //Generate startchunks
+        for (int x = -1; x <= 1; x++)
+        {
+            for (int z = -1; z <= 1; z++)
+            {
+                generateChunk(new Vector3((int)(x * Chunk.standardSize.x), 0, (int)(z * Chunk.standardSize.z)));
+            }
+        }
+
+        //Calculate the mesh of the chunk
+        foreach (Chunk chunk in world)
+        {
+            StartCoroutine(chunk.CreateMesh());
+        }
+    }
 
 
 
@@ -65,24 +91,29 @@ public class World : MonoBehaviour {
         world.Add(chunk);
 
         //Place Structures in the Chunk
-        placeStructuresInChunk(chunk);
+        placeStructuresInChunk(ref chunk);
     }
 
 
 
     //Test if there is a structure in the chunk and place the part of the structure
-    public void placeStructuresInChunk(Chunk chunk)
+    public void placeStructuresInChunk(ref Chunk chunk)
     {
         //The function ToArray must be called because of an Exception
+        //Structure[] s = structures.ToArray();
         foreach (Structure str in structures.ToArray())
         {
+            //Vector3[] c = str.chunks.ToArray();
             foreach (Vector3 cPos in str.chunks.ToArray())
             {
                 //If the structure is in the chunk
-                if (Vector3.Distance(cPos, chunk.pos) < 1f)
+                float distance = World.distance(cPos, chunk.pos);
+                if (distance < 1f)
                 {
                     //Place the structure in the chunk
+                    //watch2.Start();
                     chunk.placeStructure(str);
+                    //watch2.Stop();
 
                     //Remove the chunk from the structure 
                     str.chunks.Remove(cPos);
@@ -93,6 +124,15 @@ public class World : MonoBehaviour {
                 }
             }
         }
+    }
+
+    public static float distance(Vector3 a, Vector3 b)
+    {
+        float x = b.x - a.x;
+        float y = b.y - a.y;
+        float z = b.z - a.z;
+
+        return Mathf.Sqrt(x*x + y*y + z*z);
     }
 
 
@@ -123,6 +163,5 @@ public class World : MonoBehaviour {
 
         //No chunk was found
         return null;
-
     }
 }

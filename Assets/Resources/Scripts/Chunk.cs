@@ -1,14 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using SimplexNoise;
+using System.Diagnostics;
 
 public class Chunk : MonoBehaviour {
 
     public static Vector3 standardSize = new Vector3(20, 60, 20);
     public static int minHeight = 10;
-    public const float UVX_OFFSET = 0.0005f;
-    public const float UVY_OFFSET = 0.003f;
+    public const float UVX_OFFSET = 0.001f;
+    public const float UVY_OFFSET = 0.001f;
     public const float UV_SIZE = 0.0625f;
     public Vector3 size
     {
@@ -71,7 +71,7 @@ public class Chunk : MonoBehaviour {
 
 
     //Removes a block
-    public void destroyBlock(Vector3 pos)
+    public void destroyBlock(Vector3 pos, bool recalculateMesh)
     {
         blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z)] = BlockType.Air;
         StartCoroutine(CreateMesh());
@@ -87,12 +87,12 @@ public class Chunk : MonoBehaviour {
 
 
     //Sets a block
-    public void setBlock(Vector3 pos, BlockType id)
+    public void setBlock(Vector3 pos, BlockType id, bool recalculateMesh)
     {
         //Removes the block if it is air
         if (id == BlockType.Air)
         {
-            destroyBlock(pos);
+            destroyBlock(pos, recalculateMesh);
             return;
         }
 
@@ -104,7 +104,24 @@ public class Chunk : MonoBehaviour {
         if (blocks[x, y, z] == 0)
         {
             blocks[x, y, z] = id;
-            StartCoroutine(CreateMesh());
+            if(recalculateMesh)
+                StartCoroutine(CreateMesh());
+        }
+    }
+
+    //Sets a block
+    public void setBlockIgnoringAir(Vector3 pos, BlockType id, bool recalculateMesh)
+    {
+        //Sets a new block if there is no other block
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+        int z = (int)pos.z;
+
+        if (blocks[x, y, z] == 0)
+        {
+            blocks[x, y, z] = id;
+            if (recalculateMesh)
+                StartCoroutine(CreateMesh());
         }
     }
 
@@ -174,17 +191,17 @@ public class Chunk : MonoBehaviour {
             }
         }
 
-        generateTrees(3, 10);
+        generateTrees(5, 15);
        
     }
 
     //Generate trees
     public void generateTrees(int minNumber, int maxNumber)
     {
-        int r = minNumber + (int)(Random.value * (maxNumber-minNumber));
+        int r = 1;//minNumber + (int)(Random.value * (maxNumber-minNumber));
         for (int i = 0; i < r; i++)
         {
-            Random.seed = Random.Range(int.MinValue, int.MaxValue);
+            Random.seed += (int)(pos.x + pos.z);
             int x = (int)(Random.value * size.x) ;
             int z = (int)(Random.value * size.z);
             int y = calculateHeight(x, z);
@@ -193,29 +210,9 @@ public class Chunk : MonoBehaviour {
             //Trees should not spawn on other trees
             if (y < size.y - 6 && blocks[x, y, z] != BlockType.Wood && blocks[x, y, z] != BlockType.Leaves)
             {
-                //Position des Chunks hinzurechnen
-
-                int[,,] tree = new int[5, 6, 5];
-                //Leaves
-                for (int k = 0; k < 5; k++)
-                {
-                    for (int j = 0; j < 5; j++)
-                    {
-                        tree[k, 3, j] = (int)BlockType.Leaves;
-                        tree[k, 4, j] = (int)BlockType.Leaves;
-                        tree[k, 5, j] = (int)BlockType.Leaves;
-                    }
-                }
-
-                //Wood
-                for (int j = 0; j < 5; j++)
-                {
-                    tree[2, j, 2] = (int)BlockType.Wood;
-                }
-
                 //Create a new structure for the tree
                 Vector3 structurePos = new Vector3(x + this.pos.x, y, z + this.pos.z);
-                World.currentWorld.structures.Add(new Structure(structurePos, tree));
+                World.currentWorld.structures.Add(new Structure(structurePos, ref Tree.tree));
             }
         }
     }
@@ -428,7 +425,6 @@ public class Chunk : MonoBehaviour {
 
         if(pos.x < 0 && pos.x % standardSize.x < 0)
         {
-            float x2 = pos.x % standardSize.x;
             //The first part cuts the decimals
             x = (int)(pos.x / standardSize.x) * standardSize.x - standardSize.x;
         }
@@ -439,7 +435,6 @@ public class Chunk : MonoBehaviour {
 
         if (pos.z < 0 && pos.z % standardSize.z < 0)
         {
-            float z2 = pos.z % standardSize.z;
             //The first part cuts the decimals
             z = (int)(pos.z / standardSize.z) * standardSize.z - standardSize.z;
         }
@@ -499,20 +494,31 @@ public class Chunk : MonoBehaviour {
             if (zLength > structure.blocks.GetLength(2)) zLength = structure.blocks.GetLength(2);
         }
 
-        //Place the structure
-        //print("xLength: " + xLength + "   yLength: " + yLength + "   zLength: " + zLength);
+
+        /*
+         *Place the structure
+         The Vector posBlock is defined here for optimization
+         */    
+        Vector3 posBlock;
         for (int x = 0; x < xLength; x++)
         {
+            int arrayX = (int)(startPosition.x + x);
+            posBlock.x = x + xStart;
+
             for (int y = 0; y < yLength; y++)
             {
+                posBlock.y = startPosition.y + y;
+
                 for (int z = 0; z < zLength; z++)
                 {
-                    Vector3 posBlock = new Vector3(x + xStart, startPosition.y + y, z + zStart);
+                    posBlock.z = z + zStart;
 
+                    //Set the block at the arrayPosition x, y, z in the chunk
                     if (blocks[(int)posBlock.x, (int)posBlock.y, (int)posBlock.z] == (int)BlockType.Air)
                     {
-                        //print("Startpos: " + startPosition + "   Chunkpos:" +  pos + "   Strucpos:" + structure.pos + "   Array: " +(int)(startPosition.x + x) + ", " + y + ", " + (int)(startPosition.z + z));
-                        setBlock(posBlock, (BlockType)structure.blocks[(int)(startPosition.x + x), y, (int)(startPosition.z + z)]);
+                        BlockType blockType = (BlockType)structure.blocks[arrayX, y, (int)(startPosition.z + z)];
+                        if (blockType != BlockType.Air)
+                            setBlockIgnoringAir(posBlock, blockType, false);
                     }
                 }
             }
