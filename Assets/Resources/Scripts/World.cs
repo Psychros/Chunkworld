@@ -34,8 +34,8 @@ public class World : MonoBehaviour {
         watch.Stop();
 
 
-        print("Zeit: " + watch.ElapsedMilliseconds);
-        print("Zeit2: " + watch2.ElapsedMilliseconds);
+        print("Time: " + watch.ElapsedMilliseconds);
+        print("Time for generation: " + watch2.ElapsedMilliseconds);
     }
 	
 	void Update () {

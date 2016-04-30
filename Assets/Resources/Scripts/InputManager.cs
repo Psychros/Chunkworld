@@ -187,12 +187,24 @@ public class InputManager : MonoBehaviour {
                 pos.z = 0;
             }
 
-            //Place the block
-            c.setBlock(pos, selectedBlockType, true);
 
-            //Update the neighbourchunk
-            if (c != d)
-                StartCoroutine(d.CreateMesh());
+
+            //The player should not be in a block when this block is placed
+            Transform t = World.currentWorld.playerTransform;
+            Vector3 pos1 = new Vector3((int)(t.position.x - c.pos.x), (int)(t.position.y - .9f - c.pos.y), (int)(t.position.z - c.pos.z));
+            Vector3 pos2 = new Vector3((int)(t.position.x - c.pos.x), (int)(t.position.y + .2f - c.pos.y), (int)(t.position.z - c.pos.z));
+            Vector3 posEqual = new Vector3((int)pos.x, (int)pos.y, (int)pos.z);
+
+            if (!(posEqual.Equals(pos1) || posEqual.Equals(pos2)))
+            {
+                //Place the block
+                c.setBlock(pos, selectedBlockType, true);
+
+
+                //Update the neighbourchunk
+                if (c != d)
+                    StartCoroutine(d.CreateMesh());
+            }
         }
     }
 
