@@ -140,6 +140,9 @@ public class InputManager : MonoBehaviour {
             if (direction.z < 0)
                 pos.z -= 0.001f;
             c.destroyBlock(pos, true);
+
+            //Save the chunk
+            StartCoroutine(c.saveChunk());
         }
     }
 
@@ -200,10 +203,14 @@ public class InputManager : MonoBehaviour {
                 //Place the block
                 c.setBlock(pos, selectedBlockType, true);
 
+                //Save the chunk
+                StartCoroutine(c.saveChunk());
 
                 //Update the neighbourchunk
                 if (c != d)
+                {
                     StartCoroutine(d.CreateMesh());
+                }
             }
         }
     }

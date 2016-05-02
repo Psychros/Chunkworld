@@ -1,32 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 
 public class Chunk : MonoBehaviour {
 
-    public static Vector3 standardSize = new Vector3(20, 60, 20);
+    public static Vector3 standardSize = new Vector3(20, 120, 20);
     public static int minHeight = 10;
-    public const float UVX_OFFSET = 0.001f;
-    public const float UVY_OFFSET = 0.001f;
-    public const float UV_SIZE = 0.0625f;
-    public Vector3 size
-    {
-        get;
-        set;
-    }
-    public Vector3 pos
-    {
-        get;
-        set;
-    }
-    public BlockType[,,] blocks;
+    public static float UVX_OFFSET = 0.001f;
+    public static float UVY_OFFSET = 0.001f;
+    public static float UV_SIZE = 0.0625f;
 
-    public Mesh mesh
-    {
-        get;
-        private set;
-    }
+    public Vector3 size {get; set;}
+    public Vector3 pos {get; set;}
+    public BlockType[,,] blocks;
+    public Mesh mesh{get; private set;}
+
     private List<Vector3> vertices;
     private List<int> faces;
     private List<Vector2> uvs;
@@ -191,17 +180,18 @@ public class Chunk : MonoBehaviour {
             }
         }
 
-        generateTrees(5, 15);
+        generateTrees(0, 15);
        
     }
 
     //Generate trees
     public void generateTrees(int minNumber, int maxNumber)
     {
-        int r = 1;//minNumber + (int)(Random.value * (maxNumber-minNumber));
+        Random.seed += (int)(pos.x + pos.z);
+        int r = minNumber + (int)(Random.value * (maxNumber-minNumber));
+
         for (int i = 0; i < r; i++)
         {
-            Random.seed += (int)(pos.x + pos.z);
             int x = (int)(Random.value * size.x) ;
             int z = (int)(Random.value * size.z);
             int y = calculateHeight(x, z);
@@ -523,5 +513,38 @@ public class Chunk : MonoBehaviour {
                 }
             }
         }
+    }
+
+
+
+    //Save the chunkData
+    public virtual IEnumerator saveChunk()
+    {
+        SaveManager.writeArray(pos.ToString(), ref blocks);
+        yield return 0;
+    }
+
+    public virtual IEnumerator loadChunk()
+    {
+        //Read the file
+        List<string> list = SaveManager.readFile(pos.ToString());
+        string[] array = list.ToArray();
+        blocks = new BlockType[(int)size.x, (int)size.y, (int)size.z];
+
+        //Convert the list to a 3d-array
+        int k = 0;
+        for (int x = 0; x < size.x; x++)
+        {
+            for (int y = 0; y < size.y; y++)
+            {
+                string[] blocksIntern = array[k].Split(' ');
+                for (int z = 0; z < size.z; z++)
+                {
+                    blocks[x, y, z] = (BlockType)System.Int32.Parse(blocksIntern[z]);
+                }
+                k++;
+            }
+        }
+        yield return 0;
     }
 }

@@ -30,7 +30,7 @@ public class World : MonoBehaviour {
         //Generate the startchunks
         watch2.Start();
         generateWorld();
-        watch2.Stop();
+        //watch2.Stop();
         watch.Stop();
 
 
@@ -54,9 +54,9 @@ public class World : MonoBehaviour {
         world = new List<Chunk>();
 
         //Generate startchunks
-        for (int x = -1; x <= 1; x++)
+        for (int x = -5; x <= 5; x++)
         {
-            for (int z = -1; z <= 1; z++)
+            for (int z = -5; z <= 5; z++)
             {
                 generateChunk(new Vector3((int)(x * Chunk.standardSize.x), 0, (int)(z * Chunk.standardSize.z)));
             }
@@ -82,16 +82,29 @@ public class World : MonoBehaviour {
         Chunk chunk = g.AddComponent<Chunk>();
         chunk.size = Chunk.standardSize;
         chunk.pos = pos;
-        chunk.generateArray();
         chunk.gameObject.GetComponent<MeshRenderer>().material = blockMaterial;
 
         //Add the chunk to the world
         Instantiate(g);
-
         world.Add(chunk);
 
-        //Place Structures in the Chunk
-        placeStructuresInChunk(ref chunk);
+
+        //Generate the chunk if it doesnt exists or load it
+        if (SaveManager.fileExists(pos.ToString())){
+            StartCoroutine(chunk.loadChunk());
+        }
+        else
+        {
+            chunk.generateArray();
+
+            //Place Structures in the Chunk
+            placeStructuresInChunk(ref chunk);
+
+            //Save the chunk
+            watch2.Start();
+            StartCoroutine(chunk.saveChunk());
+            watch2.Stop();
+        }
     }
 
 
