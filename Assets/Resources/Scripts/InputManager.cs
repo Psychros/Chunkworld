@@ -49,6 +49,9 @@ public class InputManager : MonoBehaviour {
         MeshRenderer mR = selectionBlock.AddComponent<MeshRenderer>();
         selectionBlock.AddComponent<MeshFilter>();
         mR.material = selectionMaterial;
+
+        //Set the selectedBlockType
+        selectedBlockType = BlockType.Stone;
     }
 
 
@@ -95,7 +98,10 @@ public class InputManager : MonoBehaviour {
          * Inventoryslots
          */
         if (Input.GetKeyDown(slot1))
+        {
             selectedBlockType = BlockType.Stone;
+            print(Block.blockData[(int)BlockType.Stone].xLeft + ", " + Block.blockData[(int)BlockType.Stone].yLeft);
+        }
         if (Input.GetKeyDown(slot2))
             selectedBlockType = BlockType.Dirt;
         if (Input.GetKeyDown(slot3))

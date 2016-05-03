@@ -28,7 +28,6 @@ public class World : MonoBehaviour {
         Tree.generateTreeArray();
 
         //Generate the startchunks
-        watch2.Start();
         generateWorld();
         //watch2.Stop();
         watch.Stop();
