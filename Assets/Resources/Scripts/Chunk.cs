@@ -62,14 +62,17 @@ public class Chunk : MonoBehaviour {
     //Removes a block
     public void destroyBlock(Vector3 pos, bool recalculateMesh)
     {
-        blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z)] = BlockType.Air;
-        StartCoroutine(CreateMesh());
-
-        //If it is a block at the chunkedge a neighbourchunk must be updated too
-        Chunk c = findNeighbourChunk(pos);
-        if (c != null)
+        if (blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z)] != BlockType.Lavastone)
         {
-            StartCoroutine(c.CreateMesh());
+            blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z)] = BlockType.Air;
+            StartCoroutine(CreateMesh());
+
+            //If it is a block at the chunkedge a neighbourchunk must be updated too
+            Chunk c = findNeighbourChunk(pos);
+            if (c != null)
+            {
+                StartCoroutine(c.CreateMesh());
+            }
         }
     }
 
@@ -166,16 +169,22 @@ public class Chunk : MonoBehaviour {
                 noiseValue *= (30 - minHeight);
                 noiseValue += minHeight;
 
+                //Generate Lavastone
+                blocks[x, 0, z] = BlockType.Lavastone;
+
                 //Generate Stone
-                for (int y = 0; y < noiseValue-3; y++)
+                for (int y = 1; y < noiseValue-3; y++)
                 {
                     blocks[x, y, z] = BlockType.Stone;
                 }
+
                 //Generate Dirt
                 for (int y = (int)(noiseValue - 3); y < noiseValue; y++)
                 {
                     blocks[x, y, z] = BlockType.Dirt;
                 }
+
+                //Generate Grass
                 blocks[x, (int)noiseValue, z] = BlockType.Grass;
             }
         }
