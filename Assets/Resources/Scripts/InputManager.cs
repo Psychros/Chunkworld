@@ -109,9 +109,13 @@ public class InputManager : MonoBehaviour {
         if (Input.GetKeyDown(slot4))
             selectedBlockType = BlockType.Wood;
         if (Input.GetKeyDown(slot5))
-            selectedBlockType = BlockType.Leaves;
+            selectedBlockType = BlockType.Planks;
         if (Input.GetKeyDown(slot6))
+            selectedBlockType = BlockType.Leaves;
+        if (Input.GetKeyDown(slot7))
             selectedBlockType = BlockType.Glass;
+        if (Input.GetKeyDown(slot8))
+            selectedBlockType = BlockType.Lavastone;
 
 
         //Activate the lantern

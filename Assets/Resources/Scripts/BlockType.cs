@@ -2,5 +2,5 @@
 using System.Collections;
 
 public enum BlockType{
-    Air, Lavastone, Stone, Dirt, Wood, Leaves, Grass, Glass
+    Air, Lavastone, Stone, Dirt, Wood, Leaves, Grass, Glass, Planks
 }

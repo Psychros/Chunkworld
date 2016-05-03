@@ -13,6 +13,7 @@ public class Block{
         new Block(4f, 0, true),                               //Leaves
         new Block(6f, 0, 6f, 0, 1f, 0, 5f, 0, 6f, 0, 6f, 0),  //Grass
         new Block(7f, 0, true),                               //Glass
+        new Block(8f, 0),                                     //Planks
     };
 
     //UV-Coordinates for every Face
