@@ -535,24 +535,73 @@ public class Chunk : MonoBehaviour {
 
     public virtual IEnumerator loadChunk()
     {
+        //Generate the blockarray
+        blocks = new BlockType[(int)size.x, (int)size.y, (int)size.z];
+
         //Read the file
         List<string> list = SaveManager.readFile(pos.ToString());
         string[] array = list.ToArray();
-        blocks = new BlockType[(int)size.x, (int)size.y, (int)size.z];
+
+        //Position in the array
+        int x = 0;
+        int y = 0;
+        int z = 0;
 
         //Convert the list to a 3d-array
-        int k = 0;
-        for (int x = 0; x < size.x; x++)
+        foreach (string yRow in array)
         {
-            for (int y = 0; y < size.y; y++)
+            string[] values = yRow.Trim().Split(' ');
+            foreach (string value in values)
             {
-                string[] blocksIntern = array[k].Split(' ');
-                for (int z = 0; z < size.z; z++)
+                string[] blocksBlock = value.Trim().Split('x');
+                int id = System.Int32.Parse(blocksBlock[0]);
+                int number;
+
+                //Tests how many blocks are in the selected block
+                if (blocksBlock.Length == 1)
+                    number = 1;
+                else
+                    number = System.Int32.Parse(blocksBlock[1]);
+
+                /*
+                 * Sets the blocks in the selected block into the blocksarray
+                 */
+                //Airblocks shouldn't be placed because of the performance
+                if (id == (int)BlockType.Air)
                 {
-                    blocks[x, y, z] = (BlockType)System.Int32.Parse(blocksIntern[z]);
+                    y += (int)(number / standardSize.z);
+                    int deltaZ = (int)(number % standardSize.z);
+                    for (int i = 0; i < deltaZ; i++)
+                    {
+                        z++;
+                        if (z >= standardSize.z)
+                        {
+                            y++;
+                            z = 0;
+                        }
+                    }
                 }
-                k++;
+                else
+                {
+                    for (int i = 0; i < number; i++)
+                    {
+                        blocks[x, y, z] = (BlockType)id;
+
+                        //Actualize the position
+                        z++;
+                        if (z >= standardSize.z)
+                        {
+                            y++;
+                            z = 0;
+                        }
+                    }
+                }
             }
+
+            //Next line
+            x++;
+            y = 0;
+            z = 0;
         }
         yield return 0;
     }
