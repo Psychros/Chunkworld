@@ -98,10 +98,7 @@ public class InputManager : MonoBehaviour {
          * Inventoryslots
          */
         if (Input.GetKeyDown(slot1))
-        {
             selectedBlockType = BlockType.Stone;
-            print(Block.blockData[(int)BlockType.Stone].xLeft + ", " + Block.blockData[(int)BlockType.Stone].yLeft);
-        }
         if (Input.GetKeyDown(slot2))
             selectedBlockType = BlockType.Dirt;
         if (Input.GetKeyDown(slot3))
@@ -142,7 +139,7 @@ public class InputManager : MonoBehaviour {
             Vector3 pos = substractVector3(hit.point, c.pos);
 
             //The viewdirection has an influence on the correct blockselecting
-            Vector3 direction = World.currentWorld.playerTransform.TransformDirection(Vector3.forward);
+            Vector3 direction = World.currentWorld.playerTransformForDirection.TransformDirection(Vector3.forward);
             if (direction.x < 0)
                 pos.x -= 0.001f;
             if (direction.y < 0)
@@ -167,13 +164,13 @@ public class InputManager : MonoBehaviour {
             Vector3 pos = substractVector3(hit.point, c.pos);
 
             //The viewdirection has an influence on the correct blockselecting
-            Vector3 direction = World.currentWorld.playerTransform.TransformDirection(Vector3.forward);
+            Vector3 direction = World.currentWorld.playerTransformForDirection.TransformDirection(Vector3.forward);
             if (direction.x >= 0)
-                pos.x -= 0.001f;
+                pos.x -= 0.0001f;
             if (direction.y >= 0)
-                pos.y -= 0.001f;
+                pos.y -= 0.0001f;
             if (direction.z >= 0)
-                pos.z -= 0.001f;
+                pos.z -= 0.0001f;
 
             //Select the correct chunk if the selected block is at the edge
             //x-border
@@ -235,21 +232,23 @@ public class InputManager : MonoBehaviour {
         if (hit.point != Vector3.zero)
         {
             //The viewdirection has an influence on the correct blockselecting
-            Vector3 direction = World.currentWorld.playerTransform.TransformDirection(Vector3.forward);
+            Vector3 direction = World.currentWorld.playerTransformForDirection.TransformDirection(Vector3.forward);
+
             Vector3 pos = hit.point;
-            if (direction.x < 0 && pos.x - (int)(pos.x + 0.0001f) <= 0.0001f)
+            
+            if (direction.x < 0 && pos.x - (int)(pos.x + 0.001f) <= 0.001f)
             {
                 pos.x--;
             }
-            if (direction.y < 0 && pos.y - (int)pos.y <= 0.0001f)
+            if (direction.y < 0 && Math.Abs(pos.y - (int)pos.y) < 0.001f)
             {
                 pos.y--;
             }
-            if (direction.z < 0 && pos.z - (int)(pos.z+0.0001f) <= 0.0001f)
+            if (direction.z < 0 && pos.z - (int)(pos.z+0.001f) <= 0.001f)
             {
                 pos.z--;
             }
-            if (direction.z > 0 && pos.z - (int)(pos.z + 0.0001f) <= 0.0001f && pos.z >= 0)
+            if (direction.z > 0 && pos.z - (int)(pos.z + 0.001f) <= 0.001f && pos.z >= 0)
             {
                 pos.z++;
             }
@@ -298,6 +297,8 @@ public class InputManager : MonoBehaviour {
             //Add the mesh to the gameobject
             MeshFilter filter = selectionBlock.GetComponent<MeshFilter>();
             filter.sharedMesh = mesh;
+
+            //print(hit.point + ", " + new Vector3((int)(pos.x), (int)(pos.y), (int)(pos.z)));
 
             selectionBlock.transform.position = new Vector3((int)(pos.x), (int)(pos.y), (int)(pos.z));
             selectionBlock.SetActive(true);

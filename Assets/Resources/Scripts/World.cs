@@ -11,8 +11,12 @@ public class World : MonoBehaviour {
     [HideInInspector] public List<Structure> structures = new List<Structure>();
     public Material blockMaterial;
     public Transform playerTransform;
+    public Transform playerTransformForDirection;       //Important for the cameradirection
     public GameObject lanternTransform;
     private static Chunk selectedChunk = null;
+
+    //Timer
+    private float timerPlayerPosition = 0;
     
 
     //Only for testing
@@ -29,17 +33,27 @@ public class World : MonoBehaviour {
 
         //Generate the startchunks
         generateWorld();
-        //watch2.Stop();
         watch.Stop();
+
+        //Place the player:
+        loadPlayerPosition();
 
 
         print("Time: " + watch.ElapsedMilliseconds);
-        print("Time for generation: " + watch2.ElapsedMilliseconds);
+        print("Time for loading: " + watch2.ElapsedMilliseconds);
     }
 	
+
+
 	void Update () {
-	
-	}
+        //Saves the playerposition every second
+        if (timerPlayerPosition > 1)
+        {
+            timerPlayerPosition = 0;
+            savePlayerPosition();
+        }
+        timerPlayerPosition += Time.deltaTime;
+    }
 
 
 
@@ -90,7 +104,9 @@ public class World : MonoBehaviour {
 
         //Generate the chunk if it doesnt exists or load it
         if (SaveManager.fileExists(pos.ToString())){
+            watch2.Start();
             StartCoroutine(chunk.loadChunk());
+            watch2.Stop();
         }
         else
         {
@@ -175,5 +191,21 @@ public class World : MonoBehaviour {
 
         //No chunk was found
         return null;
+    }
+
+
+
+    public void loadPlayerPosition()
+    {
+        if(SaveManager.fileExists(SaveManager.filePlayer)){
+            string[] playerCoords = SaveManager.readFile(SaveManager.filePlayer).ToArray();
+            Vector3 playerPos = new Vector3(float.Parse(playerCoords[0]), float.Parse(playerCoords[1]), float.Parse(playerCoords[2]));
+            playerTransform.position = playerPos;
+        }
+    }
+
+    public void savePlayerPosition()
+    {
+        SaveManager.writeFile(SaveManager.filePlayer, playerTransform.position.x.ToString(), playerTransform.position.y.ToString(), playerTransform.position.z.ToString());
     }
 }

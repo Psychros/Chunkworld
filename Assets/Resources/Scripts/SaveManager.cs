@@ -7,63 +7,61 @@ public class SaveManager{
     public static string pathWorld = Application.dataPath + "/World/";
     public static string fileTypeWorld = ".world";
 
+    public static string filePlayer = "Player";
+
     //Creates a file and saves the strings
     public static void writeFile(string file, params string[] data)
     {
         if (!Directory.Exists(pathWorld))
             Directory.CreateDirectory(pathWorld);
 
-
-            StreamWriter writer = new StreamWriter(pathWorld + file + fileTypeWorld);
-
-        for (int i = 0; i < data.Length; i++)
+        using (StreamWriter writer = new StreamWriter(pathWorld + file + fileTypeWorld))
         {
-            writer.WriteLine(data[i]);
+            for (int i = 0; i < data.Length; i++)
+            {
+                writer.WriteLine(data[i]);
+            }
         }
-
-        writer.Flush();
-        writer.Close();
     }
 
 
+
+    //Writes a chunkarray into a textfile
     public static void writeArray(string file, ref BlockType[,,] array)
     {
         if (!Directory.Exists(pathWorld))
             Directory.CreateDirectory(pathWorld);
 
 
-        StreamWriter writer = new StreamWriter(pathWorld + file + fileTypeWorld);
-
-        int l1 = array.GetLength(0);
-        int l2 = array.GetLength(1);
-        int l3 = array.GetLength(2);
-        for (int x = 0; x < l1; x++)
+        using (StreamWriter writer = new StreamWriter(pathWorld + file + fileTypeWorld))
         {
-            for (int y = 0; y < l2; y++)
+            int l1 = array.GetLength(0);
+            int l2 = array.GetLength(1);
+            int l3 = array.GetLength(2);
+            for (int x = 0; x < l1; x++)
             {
-                for (int z = 0; z < l3; z++)
+                for (int y = 0; y < l2; y++)
                 {
-                    writer.Write((int)array[x, y, z] + " ");
+                    for (int z = 0; z < l3; z++)
+                    {
+                        writer.Write((int)array[x, y, z] + " ");
+                    }
+                    writer.WriteLine();
                 }
-                writer.WriteLine();
             }
         }
-
-        writer.Flush();
-        writer.Close();
     }
 
     //Reads all lines of a file
     public static List<string> readFile(string file)
     {
-        StreamReader reader = new StreamReader(pathWorld + file + fileTypeWorld);
-
         List<string> list = new List<string>();
-        while (!reader.EndOfStream)
-            list.Add(reader.ReadLine());
 
-        reader.Close();
-
+        using (StreamReader reader = new StreamReader(pathWorld + file + fileTypeWorld))
+        {
+            while (!reader.EndOfStream)
+                list.Add(reader.ReadLine());
+        }
         return list;
     }
 
