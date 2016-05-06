@@ -15,6 +15,8 @@ public class World : MonoBehaviour {
     public GameObject lanternTransform;
     private static Chunk selectedChunk = null;
 
+    private static Vector3 currentChunkPos;     //The chunk where the player is
+
     //Timer
     private float timerPlayerPosition = 0;
     
@@ -54,6 +56,9 @@ public class World : MonoBehaviour {
         {
             timerPlayerPosition = 0;
             savePlayerPosition();
+
+            //Load chunks if the player walks
+            loadChunks();
         }
         timerPlayerPosition += Time.deltaTime;
     }
@@ -87,7 +92,7 @@ public class World : MonoBehaviour {
 
 
 
-    public void generateChunk(Vector3 pos)
+    public Chunk generateChunk(Vector3 pos)
     {
         GameObject g = new GameObject();
         g.AddComponent<MeshRenderer>();
@@ -123,6 +128,9 @@ public class World : MonoBehaviour {
             StartCoroutine(chunk.saveChunk());
             watch2.Stop();
         }
+
+
+        return chunk;
     }
 
 
@@ -208,5 +216,55 @@ public class World : MonoBehaviour {
     {
         foreach (Vector3 pos in s.chunks.ToArray())
             SaveManager.addLine(SaveManager.pathStructures + pos.ToString(), SaveManager.fileTypeWorld, s.pos.x + "," + s.pos.y + "," + s.pos.z + " Tree");
+    }
+
+
+    //Loads the chunks if the player walks
+    public void loadChunks()
+    {
+        Vector3 posPlayer = Chunk.roundChunkPos(playerTransform.position);
+
+        //Load/Generate chunks
+        if (!Vector3.Equals(posPlayer, currentChunkPos))
+        {
+            //x-direction
+            if (posPlayer.x > currentChunkPos.x)
+            {
+                for (int i = -5; i <= 5; i++)
+                {
+                    Chunk c = generateChunk(posPlayer + new Vector3(5 * Chunk.standardSize.x, 0, i * Chunk.standardSize.z));
+                    StartCoroutine(c.CreateMesh());
+                }
+            }
+            else if (posPlayer.x < currentChunkPos.x)
+            {
+                for (int i = -5; i <= 5; i++)
+                {
+                    Chunk c = generateChunk(posPlayer + new Vector3(-5 * Chunk.standardSize.x, 0, i * Chunk.standardSize.z));
+                    StartCoroutine(c.CreateMesh());
+                }
+            }
+
+            //Z-direction
+            if (posPlayer.z > currentChunkPos.z)
+            {
+                for (int i = -5; i <= 5; i++)
+                {
+                    Chunk c = generateChunk(posPlayer + new Vector3(i * Chunk.standardSize.z, 0, 5 * Chunk.standardSize.x));
+                    StartCoroutine(c.CreateMesh());
+                }
+            }
+            else if (posPlayer.x < currentChunkPos.x)
+            {
+                for (int i = -5; i <= 5; i++)
+                {
+                    Chunk c = generateChunk(posPlayer + new Vector3(i * Chunk.standardSize.z, 0, -5 * Chunk.standardSize.x));
+                    StartCoroutine(c.CreateMesh());
+                }
+            }
+
+            //Actualize the currentChunkPos
+            currentChunkPos = posPlayer;
+        }
     }
 }
