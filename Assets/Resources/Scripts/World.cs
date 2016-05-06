@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using SimplexNoise;
 using System.Diagnostics;
+using System.IO;
 
 public class World : MonoBehaviour {
 
     [HideInInspector] public static World currentWorld;
     [HideInInspector] public List<Chunk> world;
     [HideInInspector] public int seed;
-    [HideInInspector] public List<Structure> structures = new List<Structure>();
     public Material blockMaterial;
     public Transform playerTransform;
     public Transform playerTransformForDirection;       //Important for the cameradirection
@@ -130,31 +130,23 @@ public class World : MonoBehaviour {
     //Test if there is a structure in the chunk and place the part of the structure
     public void placeStructuresInChunk(ref Chunk chunk)
     {
-        //The function ToArray must be called because of an Exception
-        //Structure[] s = structures.ToArray();
-        foreach (Structure str in structures.ToArray())
+        string file = SaveManager.pathStructures + chunk.pos.ToString();
+
+        if (File.Exists(SaveManager.pathWorld + file + SaveManager.fileTypeWorld))
         {
-            //Vector3[] c = str.chunks.ToArray();
-            foreach (Vector3 cPos in str.chunks.ToArray())
+            //Place all structures
+            List<string> structures = SaveManager.readFileWorld(file);
+            foreach (string s in structures)
             {
-                //If the structure is in the chunk
-                float distance = World.distance(cPos, chunk.pos);
-                if (distance < 1f)
-                {
-                    //Place the structure in the chunk
-                    //watch2.Start();
-                    chunk.placeStructure(str);
-                    //watch2.Stop();
-
-                    //Remove the chunk from the structure 
-                    str.chunks.Remove(cPos);
-
-                    //Test if the structure is completed 
-                    if (str.chunks.Count == 0)
-                        structures.Remove(str);
-                }
+                string[] structure = s.Trim().Split(',', ' ');
+                Vector3 pos = new Vector3(float.Parse(structure[0]), float.Parse(structure[1]), float.Parse(structure[2]));
+                chunk.placeStructure(new Structure(pos, ref Tree.tree));
             }
+
+            //Delete the file
+            File.Delete(SaveManager.pathWorld + file + SaveManager.fileTypeWorld);
         }
+
     }
 
     public static float distance(Vector3 a, Vector3 b)
@@ -216,6 +208,5 @@ public class World : MonoBehaviour {
     {
         foreach (Vector3 pos in s.chunks.ToArray())
             SaveManager.addLine(SaveManager.pathStructures + pos.ToString(), SaveManager.fileTypeWorld, s.pos.x + "," + s.pos.y + "," + s.pos.z + " Tree");
-        structures.Add(s);
     }
 }
