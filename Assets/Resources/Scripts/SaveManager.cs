@@ -5,17 +5,24 @@ using UnityEngine;
 public class SaveManager{
 
     public static string pathWorld = Application.dataPath + "/World/";
+    public static string pathStructures = "Structures/";
     public static string fileTypeWorld = ".world";
 
     public static string filePlayer = "Player";
 
     //Creates a file and saves the strings
-    public static void writeFile(string file, params string[] data)
+    public static void writeFileWorld(string file, params string[] data)
+    {
+        writeFile(file, fileTypeWorld, data);
+    }
+
+    //Creates a file and saves the strings
+    public static void writeFile(string file, string fileExtension, params string[] data)
     {
         if (!Directory.Exists(pathWorld))
             Directory.CreateDirectory(pathWorld);
 
-        using (StreamWriter writer = new StreamWriter(pathWorld + file + fileTypeWorld))
+        using (StreamWriter writer = new StreamWriter(pathWorld + file + fileExtension))
         {
             for (int i = 0; i < data.Length; i++)
             {
@@ -95,13 +102,25 @@ public class SaveManager{
 
 
 
+    //Adds the text in a new line to the file
+    public static void addLine(string file, string fileExtension, string text)
+    {
+        File.AppendAllText(pathWorld + file + fileExtension, text + System.Environment.NewLine);
+    }
+
 
     //Reads all lines of a file
-    public static List<string> readFile(string file)
+    public static List<string> readFileWorld(string file)
+    {
+        return readFile(file, fileTypeWorld);
+    }
+
+    //Reads all lines of a file
+    public static List<string> readFile(string file, string fileExtension)
     {
         List<string> list = new List<string>();
 
-        using (StreamReader reader = new StreamReader(pathWorld + file + fileTypeWorld))
+        using (StreamReader reader = new StreamReader(pathWorld + file + fileExtension))
         {
             while (!reader.EndOfStream)
                 list.Add(reader.ReadLine());
@@ -109,8 +128,31 @@ public class SaveManager{
         return list;
     }
 
-    public static bool fileExists(string file)
+
+
+
+    public static bool fileExistsWorld(string file)
     {
-        return File.Exists(pathWorld + file + fileTypeWorld);
+        return fileExists(pathWorld + file, fileTypeWorld);
+    }
+
+    public static bool fileExists(string file, string fileExtension)
+    {
+        return File.Exists(pathWorld + file + fileExtension);
+    }
+
+
+    //Generates all Folders
+    public static void generateAllDirectories()
+    {
+        generateDirectory(pathWorld);
+        generateDirectory(pathWorld + pathStructures);
+
+    }
+
+    public static void generateDirectory(string file)
+    {
+        if (!Directory.Exists(file))
+            Directory.CreateDirectory(file);
     }
 }

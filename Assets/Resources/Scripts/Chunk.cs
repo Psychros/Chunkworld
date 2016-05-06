@@ -211,7 +211,7 @@ public class Chunk : MonoBehaviour {
             {
                 //Create a new structure for the tree
                 Vector3 structurePos = new Vector3(x + this.pos.x, y, z + this.pos.z);
-                World.currentWorld.structures.Add(new Structure(structurePos, ref Tree.tree));
+                World.currentWorld.addStructure(new Structure(structurePos, ref Tree.tree));
             }
         }
     }
@@ -533,14 +533,13 @@ public class Chunk : MonoBehaviour {
         yield return 0;
     }
 
-    public virtual IEnumerator loadChunk()
+    public void loadChunk()
     {
         //Generate the blockarray
         blocks = new BlockType[(int)size.x, (int)size.y, (int)size.z];
 
         //Read the file
-        List<string> list = SaveManager.readFile(pos.ToString());
-        string[] array = list.ToArray();
+        List<string> list = SaveManager.readFileWorld(pos.ToString());
 
         //Position in the array
         int x = 0;
@@ -548,7 +547,7 @@ public class Chunk : MonoBehaviour {
         int z = 0;
 
         //Convert the list to a 3d-array
-        foreach (string yRow in array)
+        foreach (string yRow in list)
         {
             string[] values = yRow.Trim().Split(' ');
             foreach (string value in values)
@@ -557,7 +556,7 @@ public class Chunk : MonoBehaviour {
                 int id = System.Int32.Parse(blocksBlock[0]);
                 int number;
 
-                //Tests how many blocks are in the selected block
+                //Tests how many blocks in the selected block are
                 if (blocksBlock.Length == 1)
                     number = 1;
                 else
@@ -566,7 +565,7 @@ public class Chunk : MonoBehaviour {
                 /*
                  * Sets the blocks in the selected block into the blocksarray
                  */
-                //Airblocks shouldn't be placed because of the performance
+                //Airblocks shouldn't be placed because Air is the standard in the array
                 if (id == (int)BlockType.Air)
                 {
                     y += (int)(number / standardSize.z);
@@ -603,6 +602,5 @@ public class Chunk : MonoBehaviour {
             y = 0;
             z = 0;
         }
-        yield return 0;
     }
 }

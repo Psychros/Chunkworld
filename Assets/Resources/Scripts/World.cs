@@ -28,6 +28,9 @@ public class World : MonoBehaviour {
         //Make the cursor unvisible
         Cursor.visible = false;
 
+        //Generate the directories
+        SaveManager.generateAllDirectories();
+
         //Generate the structurearrays
         Tree.generateTreeArray();
 
@@ -103,9 +106,9 @@ public class World : MonoBehaviour {
 
 
         //Generate the chunk if it doesnt exists or load it
-        if (SaveManager.fileExists(pos.ToString())){
+        if (SaveManager.fileExistsWorld(pos.ToString())){
             watch2.Start();
-            StartCoroutine(chunk.loadChunk());
+            chunk.loadChunk();
             watch2.Stop();
         }
         else
@@ -197,8 +200,8 @@ public class World : MonoBehaviour {
 
     public void loadPlayerPosition()
     {
-        if(SaveManager.fileExists(SaveManager.filePlayer)){
-            string[] playerCoords = SaveManager.readFile(SaveManager.filePlayer).ToArray();
+        if(SaveManager.fileExistsWorld(SaveManager.filePlayer)){
+            string[] playerCoords = SaveManager.readFileWorld(SaveManager.filePlayer).ToArray();
             Vector3 playerPos = new Vector3(float.Parse(playerCoords[0]), float.Parse(playerCoords[1]), float.Parse(playerCoords[2]));
             playerTransform.position = playerPos;
         }
@@ -207,5 +210,12 @@ public class World : MonoBehaviour {
     public void savePlayerPosition()
     {
         SaveManager.writeFile(SaveManager.filePlayer, playerTransform.position.x.ToString(), playerTransform.position.y.ToString(), playerTransform.position.z.ToString());
+    }
+
+    public void addStructure(Structure s)
+    {
+        foreach (Vector3 pos in s.chunks.ToArray())
+            SaveManager.addLine(SaveManager.pathStructures + pos.ToString(), SaveManager.fileTypeWorld, s.pos.x + "," + s.pos.y + "," + s.pos.z + " Tree");
+        structures.Add(s);
     }
 }
