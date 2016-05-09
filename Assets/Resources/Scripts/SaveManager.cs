@@ -1,13 +1,13 @@
 ﻿using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Text;
 
 public class SaveManager{
 
     public static string pathWorld = Application.dataPath + "/World/";
     public static string pathStructures = "Structures/";
     public static string fileTypeWorld = ".world";
-
     public static string filePlayer = "Player";
 
     //Creates a file and saves the strings
@@ -65,7 +65,7 @@ public class SaveManager{
                         else
                         {
                             //Is this the first block in this row?
-                            if(id < 0)
+                            if (id < 0)
                                 number++;
                             else
                             {
@@ -85,6 +85,7 @@ public class SaveManager{
             }
         }
     }
+
 
 
 
@@ -125,6 +126,7 @@ public class SaveManager{
             }
         }
     }
+
 
 
 

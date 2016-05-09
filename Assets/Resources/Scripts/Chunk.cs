@@ -67,11 +67,16 @@ public class Chunk : MonoBehaviour {
             blocks[(int)(pos.x), (int)(pos.y), (int)(pos.z)] = BlockType.Air;
             StartCoroutine(CreateMesh());
 
-            //If it is a block at the chunkedge a neighbourchunk must be updated too
-            Chunk c = findNeighbourChunk(pos);
-            if (c != null)
+            //If it is a block at the chunkedge, a neighbourchunk must be updated too
+            Chunk cX = findNeighbourChunkX(pos);
+            if (cX != null)
             {
-                StartCoroutine(c.CreateMesh());
+                StartCoroutine(cX.CreateMesh());
+            }
+            Chunk cZ = findNeighbourChunkZ(pos);
+            if (cZ != null)
+            {
+                StartCoroutine(cZ.CreateMesh());
             }
         }
     }
@@ -121,24 +126,30 @@ public class Chunk : MonoBehaviour {
     /*
      * If the block is at the chunkedge it returns the neighbourchunk
      */
-    public Chunk findNeighbourChunk(Vector3 pos)
+    public Chunk findNeighbourChunkX(Vector3 pos)
     {
         //x-border
         if ((int)pos.x == 0)
         {
             return World.findChunk(new Vector3(this.pos.x - size.x, 0, this.pos.z));
         }
-        if ((int)pos.x == size.x - 1)
+        else if ((int)pos.x == size.x - 1)
         {
             return World.findChunk(new Vector3(this.pos.x + size.x, 0, this.pos.z));
         }
 
+        //The block is not at the chunkedge
+        return null;
+    }
+
+    public Chunk findNeighbourChunkZ(Vector3 pos)
+    {
         //z-border
         if ((int)pos.z == 0)
         {
             return World.findChunk(new Vector3(this.pos.x, 0, this.pos.z - size.z));
         }
-        if ((int)pos.z == size.z - 1)
+        else if ((int)pos.z == size.z - 1)
         {
             return World.findChunk(new Vector3(this.pos.x, 0, this.pos.z + size.z));
         }
@@ -561,7 +572,7 @@ public class Chunk : MonoBehaviour {
 
                 //Reads the number of the blocks in this block
                 if (blocksBlock.Length == 1)
-                     number = 1;
+                    number = 1;
                 else
                 {
                     if (value.Contains("="))
@@ -578,7 +589,6 @@ public class Chunk : MonoBehaviour {
                     }
                 }
 
-                    
 
                 /*
                  * Sets the blocks in the selected block into the blocksarray
