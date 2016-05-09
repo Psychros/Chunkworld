@@ -54,7 +54,7 @@ public class SaveManager{
                 id = -1;
                 number = 0;
 
-                for (int y = 0; y < l2; y++)
+                for (int y = 1; y < l2; y++)
                 {
                     for (int z = 0; z < l3; z++)
                     {
@@ -66,18 +66,15 @@ public class SaveManager{
                         {
                             //Is this the first block in this row?
                             if(id < 0)
-                            {
-                                id = id2;
                                 number++;
-                            }
                             else
                             {
                                 writeBlocks(writer, number, id);
-
-                                //Uses the new id
-                                id = id2;
                                 number = 1;
                             }
+
+                            //Uses the new id
+                            id = id2;
                         }
                     }
                 }
@@ -95,9 +92,38 @@ public class SaveManager{
     private static void writeBlocks(StreamWriter writer, int number, int id)
     {
         if (number > 1)
-            writer.Write(id + "x" + number + " ");
+        {
+            string link = "x";
+
+            //Remove doubles
+            if (number == id)
+                writer.Write(id + "= ");
+            else
+            {
+                //Cuts the zeroes at the end of the number if there is one
+                cutZeroes(ref number, ref link);
+
+                writer.Write(id + link + number + " ");
+            }
+        }
         else
             writer.Write(id + " ");
+    }
+
+
+    //Cuts the last 2 zeroes
+    private static void cutZeroes(ref int number, ref string link)
+    {
+        if (number % 10 == 0)
+        {
+            link = "t";
+            number /= 10;
+            if (number % 10 == 0)
+            {
+                link = "h";
+                number /= 10;
+            }
+        }
     }
 
 
@@ -126,19 +152,6 @@ public class SaveManager{
                 list.Add(reader.ReadLine());
         }
         return list;
-    }
-
-
-
-
-    public static bool fileExistsWorld(string file)
-    {
-        return fileExists(pathWorld + file, fileTypeWorld);
-    }
-
-    public static bool fileExists(string file, string fileExtension)
-    {
-        return File.Exists(pathWorld + file + fileExtension);
     }
 
 

@@ -149,7 +149,7 @@ public class InputManager : MonoBehaviour {
             c.destroyBlock(pos, true);
 
             //Save the chunk
-            StartCoroutine(c.saveChunk());
+            c.saveChunk();
         }
     }
 
@@ -211,7 +211,7 @@ public class InputManager : MonoBehaviour {
                 c.setBlock(pos, selectedBlockType, true);
 
                 //Save the chunk
-                StartCoroutine(c.saveChunk());
+                c.saveChunk();
 
                 //Update the neighbourchunk
                 if (c != d)

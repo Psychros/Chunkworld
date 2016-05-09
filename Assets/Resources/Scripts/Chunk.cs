@@ -527,10 +527,9 @@ public class Chunk : MonoBehaviour {
 
 
     //Save the chunkData
-    public virtual IEnumerator saveChunk()
+    public void saveChunk()
     {
         SaveManager.writeArray(pos.ToString(), ref blocks);
-        yield return 0;
     }
 
     public void loadChunk()
@@ -541,10 +540,14 @@ public class Chunk : MonoBehaviour {
         //Read the file
         List<string> list = SaveManager.readFileWorld(pos.ToString());
 
+        //Sets the first level(Lavastone)
+        fillLevel(0, BlockType.Lavastone);
+
         //Position in the array
         int x = 0;
-        int y = 0;
+        int y = 1;
         int z = 0;
+
 
         //Convert the list to a 3d-array
         foreach (string yRow in list)
@@ -552,15 +555,30 @@ public class Chunk : MonoBehaviour {
             string[] values = yRow.Trim().Split(' ');
             foreach (string value in values)
             {
-                string[] blocksBlock = value.Trim().Split('x');
+                string[] blocksBlock = value.Trim().Split('x', '=', 't', 'h');
                 int id = System.Int32.Parse(blocksBlock[0]);
-                int number;
+                int number = 0;
 
-                //Tests how many blocks in the selected block are
+                //Reads the number of the blocks in this block
                 if (blocksBlock.Length == 1)
-                    number = 1;
+                     number = 1;
                 else
-                    number = System.Int32.Parse(blocksBlock[1]);
+                {
+                    if (value.Contains("="))
+                        number = id;
+                    else
+                    {
+                        number = System.Int32.Parse(blocksBlock[1].Trim());
+
+                        //Add the cutted zeroes
+                        if (value.Contains("t"))
+                            number *= 10;
+                        else if (value.Contains("h"))
+                            number *= 100;
+                    }
+                }
+
+                    
 
                 /*
                  * Sets the blocks in the selected block into the blocksarray
@@ -572,12 +590,7 @@ public class Chunk : MonoBehaviour {
                     int deltaZ = (int)(number % standardSize.z);
                     for (int i = 0; i < deltaZ; i++)
                     {
-                        z++;
-                        if (z >= standardSize.z)
-                        {
-                            y++;
-                            z = 0;
-                        }
+                        raiseUpZY(ref z, ref y);
                     }
                 }
                 else
@@ -587,20 +600,40 @@ public class Chunk : MonoBehaviour {
                         blocks[x, y, z] = (BlockType)id;
 
                         //Actualize the position
-                        z++;
-                        if (z >= standardSize.z)
-                        {
-                            y++;
-                            z = 0;
-                        }
+                        raiseUpZY(ref z, ref y);
                     }
                 }
             }
 
             //Next line
             x++;
-            y = 0;
+            y = 1;
             z = 0;
+        }
+    }
+
+
+
+    private void raiseUpZY(ref int z, ref int y)
+    {
+        z++;
+        if (z >= standardSize.z)
+        {
+            y++;
+            z = 0;
+        }
+    }
+
+
+    //Fills one level with a BlockType
+    private void fillLevel(int level, BlockType id)
+    {
+        for (int i = 0; i < standardSize.x; i++)
+        {
+            for (int j = 0; j < standardSize.z; j++)
+            {
+                blocks[i, level, j] = id;
+            }
         }
     }
 }

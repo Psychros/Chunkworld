@@ -58,7 +58,7 @@ public class World : MonoBehaviour {
             savePlayerPosition();
 
             //Load chunks if the player walks
-            loadChunks();
+            //loadChunks();
         }
         timerPlayerPosition += Time.deltaTime;
     }
@@ -111,9 +111,10 @@ public class World : MonoBehaviour {
 
 
         //Generate the chunk if it doesnt exists or load it
-        if (SaveManager.fileExistsWorld(pos.ToString())){
+        if (File.Exists(SaveManager.pathWorld + pos.ToString() + SaveManager.fileTypeWorld)){
             watch2.Start();
             chunk.loadChunk();
+            //chunk.saveChunk();
             watch2.Stop();
         }
         else
@@ -125,7 +126,7 @@ public class World : MonoBehaviour {
 
             //Save the chunk
             watch2.Start();
-            StartCoroutine(chunk.saveChunk());
+            chunk.saveChunk();
             watch2.Stop();
         }
 
@@ -200,7 +201,7 @@ public class World : MonoBehaviour {
 
     public void loadPlayerPosition()
     {
-        if(SaveManager.fileExistsWorld(SaveManager.filePlayer)){
+        if(File.Exists(SaveManager.pathWorld + SaveManager.filePlayer + SaveManager.fileTypeWorld)){
             string[] playerCoords = SaveManager.readFileWorld(SaveManager.filePlayer).ToArray();
             Vector3 playerPos = new Vector3(float.Parse(playerCoords[0]), float.Parse(playerCoords[1]), float.Parse(playerCoords[2]));
             playerTransform.position = playerPos;
@@ -209,7 +210,7 @@ public class World : MonoBehaviour {
 
     public void savePlayerPosition()
     {
-        SaveManager.writeFile(SaveManager.filePlayer, playerTransform.position.x.ToString(), playerTransform.position.y.ToString(), playerTransform.position.z.ToString());
+        SaveManager.writeFileWorld(SaveManager.filePlayer, playerTransform.position.x.ToString(), playerTransform.position.y.ToString(), playerTransform.position.z.ToString());
     }
 
     public void addStructure(Structure s)
