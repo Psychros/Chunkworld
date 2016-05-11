@@ -2,13 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics;
 
 public class Chunk : MonoBehaviour {
 
     public static Vector3 standardSize = new Vector3(20, 120, 20);
     public static int minHeight = 10;
-    public static float UVX_OFFSET = 0.001f;
-    public static float UVY_OFFSET = 0.001f;
+    public static float UV_OFFSET = 0.001f;
     public static float UV_SIZE = 0.0625f;
 
     public Vector3 size {get; set;}
@@ -16,24 +16,28 @@ public class Chunk : MonoBehaviour {
     public BlockType[,,] blocks;
     public Mesh mesh{get; private set;}
 
+    //Important for the performance of the method BuildFace()
     private List<Vector3> vertices;
     private List<int> faces;
     private List<Vector2> uvs;
     private int faceCount = 0;
 
+    //Important for the performance of the method GetByte()
+    private Chunk x1;
+    private Chunk x2;
+    private Chunk z1;
+    private Chunk z2;
 
+    public static Stopwatch watch2 = new Stopwatch();
 
 
     public Chunk()
     {
         
     }
-    public Chunk(Vector3 v)
+    public Chunk(Vector3 v) : this(v, standardSize)
     {
-        this.pos = v;
-        this.size = standardSize;
 
-        generateArray();
     }
     public Chunk(Vector3 v, Vector3 size)
     {
@@ -42,19 +46,13 @@ public class Chunk : MonoBehaviour {
 
         generateArray();
     }
-    public Chunk(int x, int y, int z)
+    public Chunk(int x, int y, int z) : this(new Vector3(x, y, z))
     {
-        this.pos = new Vector3(x, y, z);
-        this.size = standardSize;
 
-        generateArray();
     }
-    public Chunk(int x, int y, int z, Vector3 size)
+    public Chunk(int x, int y, int z, Vector3 size) : this(new Vector3(x, y, z), size)
     {
-        this.pos = new Vector3(x, y, z);
-        this.size = size;
 
-        generateArray();
     }
 
 
@@ -230,52 +228,71 @@ public class Chunk : MonoBehaviour {
 
     public virtual IEnumerator CreateMesh()
     {
-        mesh = new Mesh();
+        watch2.Start();
 
+        //Save the neighbourchunks in a variable
+        x1 = World.findChunk(new Vector3(pos.x - size.x, 0, pos.z));
+        x2 = World.findChunk(new Vector3(pos.x + size.x, 0, pos.z));
+        z1 = World.findChunk(new Vector3(pos.x, 0, pos.z - size.z));
+        z2 = World.findChunk(new Vector3(pos.x, 0, pos.z + size.z));
+
+        mesh = new Mesh();
         List<Vector3> verts = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
         List<int> tris = new List<int>();
 
+        //This variables are defined here for optimization
+        int id;
+        float xVector, yVector, zVector;
+
         //Create the mesh for every visible face
         for (int x = 0; x < size.x; x++)
         {
+            xVector = x + (int)pos.x;
+
             for (int y = 0; y < size.y; y++)
             {
+                yVector = y + (int)pos.y;
+
                 for (int z = 0; z < size.z; z++)
                 {
-                    if (blocks[x, y, z] == 0) continue;
-                    
+                    if (blocks[x, y, z] == BlockType.Air) continue;
+
+                    zVector = z + (int)pos.z;
+
                     //Blockid
-                    int id = (int)blocks[x, y, z];
+                    id = (int)blocks[x, y, z];
 
                     // Left wall
                     if (IsTransparent(x - 1, y, z, x, y, z))
-                        BuildFace(id, new Vector3(x + (int)pos.x, y + (int)pos.y, z + (int)pos.z), Vector3.up, Vector3.forward, false, ref verts, ref uvs, ref tris, Block.blockData[id].xLeft, Block.blockData[id].yLeft);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.forward, false, ref verts, ref uvs, ref tris, Block.blockData[id].xLeft, Block.blockData[id].yLeft);
                     // Right wall
                     if (IsTransparent(x + 1, y, z, x, y, z))
-                        BuildFace(id, new Vector3(x + (int)pos.x + 1, y + (int)pos.y, z + (int)pos.z), Vector3.up, Vector3.forward, true, ref verts, ref uvs, ref tris, Block.blockData[id].xRight, Block.blockData[id].yRight);
+                        BuildFace(id, new Vector3(xVector + 1, yVector, zVector), Vector3.up, Vector3.forward, true, ref verts, ref uvs, ref tris, Block.blockData[id].xRight, Block.blockData[id].yRight);
 
                     // Bottom wall
                     if (IsTransparent(x, y - 1, z, x, y, z))
-                        BuildFace(id, new Vector3(x + (int)pos.x, y + (int)pos.y, z + (int)pos.z), Vector3.forward, Vector3.right, false, ref verts, ref uvs, ref tris, Block.blockData[id].xBottom, Block.blockData[id].yBottom);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.forward, Vector3.right, false, ref verts, ref uvs, ref tris, Block.blockData[id].xBottom, Block.blockData[id].yBottom);
                     // Top wall
                     if (IsTransparent(x, y + 1, z, x, y, z))
-                        BuildFace(id, new Vector3(x + (int)pos.x, y + (int)pos.y + 1, z + (int)pos.z), Vector3.forward, Vector3.right, true, ref verts, ref uvs, ref tris, Block.blockData[id].xTop, Block.blockData[id].yTop);
+                        BuildFace(id, new Vector3(xVector, yVector + 1, zVector), Vector3.forward, Vector3.right, true, ref verts, ref uvs, ref tris, Block.blockData[id].xTop, Block.blockData[id].yTop);
 
                     // Back
                     if (IsTransparent(x, y, z - 1, x, y, z))
-                        BuildFace(id, new Vector3(x + (int)pos.x, y + (int)pos.y, z + (int)pos.z), Vector3.up, Vector3.right, true, ref verts, ref uvs, ref tris, Block.blockData[id].xBack, Block.blockData[id].yBack);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.right, true, ref verts, ref uvs, ref tris, Block.blockData[id].xBack, Block.blockData[id].yBack);
                     // Front
                     if (IsTransparent(x, y, z + 1, x, y, z))
-                        BuildFace(id, new Vector3(x + (int)pos.x, y + (int)pos.y, z + (int)pos.z + 1), Vector3.up, Vector3.right, false, ref verts, ref uvs, ref tris, Block.blockData[id].xFront, Block.blockData[id].yFront);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector + 1), Vector3.up, Vector3.right, false, ref verts, ref uvs, ref tris, Block.blockData[id].xFront, Block.blockData[id].yFront);
                 }
             }
         }
+        watch2.Stop();
+
 
         //Add the information to the mesh
         mesh.vertices = verts.ToArray();
         mesh.uv = uvs.ToArray();
-        mesh.triangles = tris.ToArray();
+        mesh.triangles = tris.ToArray(); 
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
 
@@ -283,6 +300,8 @@ public class Chunk : MonoBehaviour {
         MeshFilter filter = gameObject.GetComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         gameObject.GetComponent<MeshCollider>().sharedMesh = mesh;
+        //print(watch2.ElapsedMilliseconds);
+        watch2.Reset();
 
         yield return 0;
 
@@ -294,33 +313,42 @@ public class Chunk : MonoBehaviour {
         int index = verts.Count;
         faceCount++;
 
+        //Build the face
         verts.Add(corner);
         verts.Add(corner + up);
         verts.Add(corner + up + right);
         verts.Add(corner + right);
 
-        uvs.Add(new Vector2(uvX * UV_SIZE + UVX_OFFSET, 1f - (uvY + 1f) * UV_SIZE + UVY_OFFSET));
-        uvs.Add(new Vector2(uvX * UV_SIZE + UVX_OFFSET, 1f - uvY * UV_SIZE - UVY_OFFSET));
-        uvs.Add(new Vector2((uvX + 1f) * UV_SIZE - UVX_OFFSET, 1f - uvY * UV_SIZE - UVY_OFFSET));
-        uvs.Add(new Vector2((uvX + 1f) * UV_SIZE - UVX_OFFSET, 1f - (uvY + 1f) * UV_SIZE + UVY_OFFSET));
+        //Build the UV-Coords
+        float x1 = uvX * UV_SIZE + UV_OFFSET,
+              x2 = (uvX + 1f) * UV_SIZE - UV_OFFSET,
+              y1 = 1f - (uvY + 1f) * UV_SIZE + UV_OFFSET,
+              y2 = 1f - uvY * UV_SIZE - UV_OFFSET;
+        uvs.Add(new Vector2(x1, y1));
+        uvs.Add(new Vector2(x1, y2));
+        uvs.Add(new Vector2(x2, y2));
+        uvs.Add(new Vector2(x2, y1));
 
+        //Add the faces
+        int tris0 = index + 0,
+            tris2 = index + 2;
         if (reversed)
         {
-            tris.Add(index + 0);
+            tris.Add(tris0);
             tris.Add(index + 1);
-            tris.Add(index + 2);
-            tris.Add(index + 2);
+            tris.Add(tris2);
+            tris.Add(tris2);
             tris.Add(index + 3);
-            tris.Add(index + 0);
+            tris.Add(tris0);
         }
         else
         {
             tris.Add(index + 1);
-            tris.Add(index + 0);
-            tris.Add(index + 2);
+            tris.Add(tris0);
+            tris.Add(tris2);
             tris.Add(index + 3);
-            tris.Add(index + 2);
-            tris.Add(index + 0);
+            tris.Add(tris2);
+            tris.Add(tris0);
         }
 
     }
@@ -332,9 +360,8 @@ public class Chunk : MonoBehaviour {
         int brick = GetByte(x, y, z);
         int brick2 = GetByte(x2, y2, z2);
 
-        if((brick == (int)BlockType.Air) || 
-           (Block.blockData[brick].isTransparent && brick != brick2))
-                return true;
+        if((brick == (int)BlockType.Air) || (Block.blockData[brick].isTransparent && brick != brick2))
+            return true;
         else
             return false;
     }
@@ -349,62 +376,42 @@ public class Chunk : MonoBehaviour {
         //Left
         if((x < 0))
         {
-            Chunk c = World.findChunk(new Vector3(pos.x-size.x, 0, pos.z));
-            if (c != null)
-            {
-                return c.GetByte((int)size.x - 1, y, z);
-            }
+            if (x1 != null)
+                return x1.GetByte((int)size.x - 1, y, z);
             else
-            {
                 return 1;
-            }
         }
         //Right
-        if ((x >= size.x))
+        else if ((x >= size.x))
         {
-            Chunk c = World.findChunk(new Vector3(pos.x + size.x, 0, pos.z));
-            if (c != null)
-            {
-                return c.GetByte(0, y, z);
-            }
+            if (x2 != null)
+                return x2.GetByte(0, y, z);
             else
-            {
                 return 1;
-            }
         }
 
         //Bottom    
         if ((y < 0))
             return 1;
         //Top
-        if ((y >= size.y))
+        else if ((y >= size.y))
             return 0;
 
         //Back
         if((z < 0))
         {
-            Chunk c = World.findChunk(new Vector3(pos.x, 0, pos.z - size.z));
-            if (c != null)
-            {
-                return c.GetByte(x, y, (int)size.z - 1);
-            }
+            if (z1 != null)
+                return z1.GetByte(x, y, (int)size.z - 1);
             else
-            {
                 return 1;
-            }
         }
         //Front
-        if ((z >= size.z))
+        else if ((z >= size.z))
         {
-            Chunk c = World.findChunk(new Vector3(pos.x, 0, pos.z + size.z));
-            if (c != null)
-            {
-               return c.GetByte(x, y, 0);
-            }
+            if (z2 != null)
+               return z2.GetByte(x, y, 0);
             else
-            {
                 return 1;
-            }
         }
         if ((x < 0) || (y < 0) || (z < 0) || (x >= size.x) || (y >= size.y) || (z >= size.z))
             return 0;

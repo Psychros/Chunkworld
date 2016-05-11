@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SimplexNoise;
 using System.Diagnostics;
 using System.IO;
+using System.Collections;
 
 public class World : MonoBehaviour {
 
@@ -15,7 +16,10 @@ public class World : MonoBehaviour {
     public GameObject lanternTransform;
     private static Chunk selectedChunk = null;
 
-    private static Vector3 currentChunkPos;     //The chunk where the player is
+    //Important for chunkloading
+    private static Vector3 currentChunkPos;
+    private static System.Func<int, int, Vector3> createVector1 = (int a, int b) => new Vector3(a * Chunk.standardSize.x, 0, b * Chunk.standardSize.z);
+    private static System.Func<int, int, Vector3> createVector2 = (int a, int b) => new Vector3(b * Chunk.standardSize.x, 0, a * Chunk.standardSize.z);
 
     //Timer
     private float timerPlayerPosition = 0;
@@ -36,12 +40,12 @@ public class World : MonoBehaviour {
         //Generate the structurearrays
         Tree.generateTreeArray();
 
+        //Place the player:
+        loadPlayerPosition();
+
         //Generate the startchunks
         generateWorld();
         watch.Stop();
-
-        //Place the player:
-        loadPlayerPosition();
 
 
         print("Time: " + watch.ElapsedMilliseconds);
@@ -58,7 +62,7 @@ public class World : MonoBehaviour {
             savePlayerPosition();
 
             //Load chunks if the player walks
-            //loadChunks();
+            //testForChunkLoading();
         }
         timerPlayerPosition += Time.deltaTime;
     }
@@ -79,7 +83,7 @@ public class World : MonoBehaviour {
         {
             for (int z = -5; z <= 5; z++)
             {
-                generateChunk(new Vector3((int)(x * Chunk.standardSize.x), 0, (int)(z * Chunk.standardSize.z)));
+                generateChunk(Chunk.roundChunkPos(playerTransform.position) + new Vector3((int)(x * Chunk.standardSize.x), 0, (int)(z * Chunk.standardSize.z)));
             }
         }
 
@@ -107,7 +111,7 @@ public class World : MonoBehaviour {
 
         //Add the chunk to the world
         Instantiate(g);
-        world.Add(chunk);
+        currentWorld.world.Add(chunk);
 
 
         //Generate the chunk if it doesnt exists or load it
@@ -179,15 +183,12 @@ public class World : MonoBehaviour {
         else
         {
             //Search the chunk
-            for (int a = 0; a < currentWorld.world.Count; a++)
+            foreach(Chunk c in currentWorld.world)
             {
-                //Posizion of the chunk
-                Vector3 cpos = currentWorld.world[a].pos;
-
-                if (pos.Equals(cpos))
+                if (pos.Equals(c.pos))
                 {
                     //Mark the found chunk as selected
-                    selectedChunk = currentWorld.world[a];
+                    selectedChunk = c;
                     return selectedChunk;
                 }
             }
@@ -221,7 +222,7 @@ public class World : MonoBehaviour {
 
 
     //Loads the chunks if the player walks
-    public void loadChunks()
+    public void testForChunkLoading()
     {
         Vector3 posPlayer = Chunk.roundChunkPos(playerTransform.position);
 
@@ -231,41 +232,65 @@ public class World : MonoBehaviour {
             //x-direction
             if (posPlayer.x > currentChunkPos.x)
             {
-                for (int i = -5; i <= 5; i++)
-                {
-                    Chunk c = generateChunk(posPlayer + new Vector3(5 * Chunk.standardSize.x, 0, i * Chunk.standardSize.z));
-                    StartCoroutine(c.CreateMesh());
-                }
+                StartCoroutine(loadChunks(posPlayer, true, createVector1));
             }
             else if (posPlayer.x < currentChunkPos.x)
             {
-                for (int i = -5; i <= 5; i++)
-                {
-                    Chunk c = generateChunk(posPlayer + new Vector3(-5 * Chunk.standardSize.x, 0, i * Chunk.standardSize.z));
-                    StartCoroutine(c.CreateMesh());
-                }
+                StartCoroutine(loadChunks(posPlayer, false, createVector1));
             }
 
             //Z-direction
             if (posPlayer.z > currentChunkPos.z)
             {
-                for (int i = -5; i <= 5; i++)
-                {
-                    Chunk c = generateChunk(posPlayer + new Vector3(i * Chunk.standardSize.z, 0, 5 * Chunk.standardSize.x));
-                    StartCoroutine(c.CreateMesh());
-                }
+                StartCoroutine(loadChunks(posPlayer, true, createVector2));
             }
             else if (posPlayer.x < currentChunkPos.x)
             {
-                for (int i = -5; i <= 5; i++)
-                {
-                    Chunk c = generateChunk(posPlayer + new Vector3(i * Chunk.standardSize.z, 0, -5 * Chunk.standardSize.x));
-                    StartCoroutine(c.CreateMesh());
-                }
+                StartCoroutine(loadChunks(posPlayer, false, createVector2));
             }
 
             //Actualize the currentChunkPos
             currentChunkPos = posPlayer;
         }
+    }
+
+    //Is needed fore compact code
+    private IEnumerator loadChunks(Vector3 posPlayer, bool isPositive, System.Func<int, int, Vector3> func)
+    {
+        Chunk[] chunks = new Chunk[22];
+
+        int a = isPositive ? 5 : -5;
+        int b = isPositive ? a - 1 : a + 1;
+        int a2 = isPositive ? -5 : 5;
+
+        //Load the chunks
+        for (int i = -5; i <= 5; i++)
+        {
+            Chunk c = generateChunk(posPlayer + func(a, i));
+            chunks[i + 5] = c;
+            Chunk d = findChunk(posPlayer + func(b, i));
+            chunks[i + 16] = d;
+
+            //Remove the old chunks
+            Chunk e = findChunk(posPlayer + func(a2, i));
+            if (e != null)
+            {
+                world.Remove(e);
+                Destroy(e.gameObject);
+            } else
+            {
+                print((posPlayer + func(a2, i)));
+            }
+        }
+
+        //Create the meshs
+        foreach (Chunk c in chunks)
+            if (c != null)
+            {
+                StartCoroutine(c.CreateMesh());
+                yield return null;
+            }    
+
+        yield return 0;
     }
 }
