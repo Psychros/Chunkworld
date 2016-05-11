@@ -35,7 +35,7 @@ public class World : MonoBehaviour {
         Cursor.visible = false;
 
         //Generate the directories
-        SaveManager.generateAllDirectories();
+        SaveManager.generateAllDirectories();           
 
         //Generate the structurearrays
         Tree.generateTreeArray();
@@ -72,11 +72,18 @@ public class World : MonoBehaviour {
     public void generateWorld()
     {
         currentWorld = this;
-        seed = Random.Range(0, int.MaxValue);
-        Random.seed = seed;
         Noise.generateArray();
-
         world = new List<Chunk>();
+
+        //Save or load the seed
+        if (File.Exists(SaveManager.pathWorld + SaveManager.fileWorld + SaveManager.fileTypeWorld))
+            seed = int.Parse(SaveManager.readFile(SaveManager.fileWorld, SaveManager.fileTypeWorld)[0].Trim());
+        else
+        {
+            seed = Random.Range(0, int.MaxValue);
+            SaveManager.writeFile(SaveManager.fileWorld, SaveManager.fileTypeWorld, seed.ToString());
+        }
+        Random.seed = seed;
 
         //Generate startchunks
         for (int x = -5; x <= 5; x++)

@@ -9,6 +9,7 @@ public class SaveManager{
     public static string pathStructures = "Structures/";
     public static string fileTypeWorld = ".world";
     public static string filePlayer = "Player";
+    public static string fileWorld = "World";
 
     //Creates a file and saves the strings
     public static void writeFileWorld(string file, params string[] data)
