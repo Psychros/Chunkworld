@@ -4,6 +4,7 @@ using System.Collections;
 public class Tree : MonoBehaviour {
 
     public static int[,,] tree;
+    public static int treeHalfSize = 3;
 
 
     //Generate the Treearray

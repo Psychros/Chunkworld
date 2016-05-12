@@ -5,15 +5,17 @@ public class Block{
 
     public static Block[] blockData =
     {
-        new Block(-1f, -1f, true),                            //Air
-        new Block(0, 1),                                      //Lavastone
-        new Block(0, 0),                                      //Stone
-        new Block(1f, 0),                                     //Dirt
-        new Block(2f, 0, 2f, 0, 3f, 0, 3f, 0, 2f, 0, 2f, 0),  //Wood
-        new Block(4f, 0, true),                               //Leaves
-        new Block(6f, 0, 6f, 0, 1f, 0, 5f, 0, 6f, 0, 6f, 0),  //Grass
-        new Block(7f, 0, true),                               //Glass
-        new Block(8f, 0),                                     //Planks
+        new Block(-1, -1, true),                             //Air
+        new Block(0, 1),                                     //Lavastone
+        new Block(0, 0),                                     //Stone
+        new Block(1, 0),                                     //Dirt
+        new Block(2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0),       //Wood
+        new Block(4, 0, true),                               //Leaves
+        new Block(6, 0, 6, 0, 1, 0, 5, 0, 6, 0, 6, 0),       //Grass
+        new Block(7, 0, true),                               //Glass
+        new Block(8, 0),                                     //Planks
+        new Block(1, 1, true),                               //Water
+        new Block(9, 0),                                     //Sand
     };
 
     //UV-Coordinates for every Face

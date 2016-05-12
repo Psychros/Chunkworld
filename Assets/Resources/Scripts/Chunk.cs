@@ -8,6 +8,7 @@ public class Chunk : MonoBehaviour {
 
     public static Vector3 standardSize = new Vector3(20, 120, 20);
     public static int minHeight = 10;
+    public static int waterHeight = 25;
     public static float UV_OFFSET = 0.001f;
     public static float UV_SIZE = 0.0625f;
 
@@ -175,7 +176,7 @@ public class Chunk : MonoBehaviour {
                 float noiseZ = Mathf.Abs((z + (int)pos.z + offset.z) / size.z);
 
                 float noiseValue = Mathf.PerlinNoise(noiseX/4, noiseZ/4);
-                noiseValue *= (30 - minHeight);
+                noiseValue *= (60 - minHeight);
                 noiseValue += minHeight;
 
                 //Generate Lavastone
@@ -194,7 +195,19 @@ public class Chunk : MonoBehaviour {
                 }
 
                 //Generate Grass
-                blocks[x, (int)noiseValue, z] = BlockType.Grass;
+                if(noiseValue > waterHeight)
+                    blocks[x, (int)noiseValue, z] = BlockType.Grass;
+
+                //Generate Sand in the water
+                if (noiseValue <= waterHeight)
+                    blocks[x, (int)noiseValue, z] = BlockType.Sand;
+
+                //Generate Water
+                if (noiseValue < waterHeight)
+                for (int i = (int)noiseValue + 1; i < waterHeight; i++)
+                {
+                    blocks[x, i, z] = BlockType.Water;
+                }
             }
         }
 
@@ -210,17 +223,20 @@ public class Chunk : MonoBehaviour {
 
         for (int i = 0; i < r; i++)
         {
-            int x = (int)(Random.value * size.x) ;
+            int x = (int)(Random.value * size.x);
             int z = (int)(Random.value * size.z);
             int y = calculateHeight(x, z);
 
-            //If the height is to high there will be an exception
-            //Trees should not spawn on other trees
-            if (y < size.y - 6 && blocks[x, y, z] != BlockType.Wood && blocks[x, y, z] != BlockType.Leaves)
-            {
-                //Create a new structure for the tree
-                Vector3 structurePos = new Vector3(x + this.pos.x, y, z + this.pos.z);
-                World.currentWorld.addStructure(new Structure(structurePos, ref Tree.tree));
+            //The tree should not spawn in the water
+            if (y > waterHeight) {
+                //If the height is to high there will be an exception
+                //Trees should not spawn on other trees
+                if (y < size.y - 6 && blocks[x, y, z] != BlockType.Wood && blocks[x, y, z] != BlockType.Leaves)
+                {
+                    //Create a new structure for the tree
+                    Vector3 structurePos = new Vector3(x + this.pos.x - Tree.treeHalfSize, y, z + this.pos.z - Tree.treeHalfSize);
+                    World.currentWorld.addStructure(new Structure(structurePos, ref Tree.tree));
+                }
             }
         }
     }
