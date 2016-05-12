@@ -10,10 +10,11 @@ public class World : MonoBehaviour {
     [HideInInspector] public static World currentWorld;
     [HideInInspector] public List<Chunk> world;
     [HideInInspector] public int seed;
-    public Material blockMaterial;
+    public Material blockMaterial, liquidsMaterial;
     public Transform playerTransform;
     public Transform playerTransformForDirection;       //Important for the cameradirection
     public GameObject lanternTransform;
+    public int viewDistance = 5;
     private static Chunk selectedChunk = null;
 
     //Important for chunkloading
@@ -62,7 +63,7 @@ public class World : MonoBehaviour {
             savePlayerPosition();
 
             //Load chunks if the player walks
-            //testForChunkLoading();
+            testForChunkLoading();
         }
         timerPlayerPosition += Time.deltaTime;
     }
@@ -86,9 +87,9 @@ public class World : MonoBehaviour {
         Random.seed = seed;
 
         //Generate startchunks
-        for (int x = -5; x <= 5; x++)
+        for (int x = -viewDistance; x <= viewDistance; x++)
         {
-            for (int z = -5; z <= 5; z++)
+            for (int z = -viewDistance; z <= viewDistance; z++)
             {
                 generateChunk(Chunk.roundChunkPos(playerTransform.position) + new Vector3((int)(x * Chunk.standardSize.x), 0, (int)(z * Chunk.standardSize.z)));
             }
@@ -106,18 +107,26 @@ public class World : MonoBehaviour {
     public Chunk generateChunk(Vector3 pos)
     {
         GameObject g = new GameObject();
-        g.AddComponent<MeshRenderer>();
+        MeshRenderer rendererBlocks = g.AddComponent<MeshRenderer>();
+        rendererBlocks.material = blockMaterial;
         g.AddComponent<MeshFilter>();
         g.AddComponent<MeshCollider>();
+
+        GameObject liquids = new GameObject();
+        liquids.transform.SetParent(g.transform);
+        MeshRenderer rendererLiquids = liquids.AddComponent<MeshRenderer>();
+        rendererLiquids.material = liquidsMaterial;
+        liquids.AddComponent<MeshFilter>();
 
         //Create a chunk
         Chunk chunk = g.AddComponent<Chunk>();
         chunk.size = Chunk.standardSize;
         chunk.pos = pos;
-        chunk.gameObject.GetComponent<MeshRenderer>().material = blockMaterial;
+        chunk.liquids = liquids;
 
         //Add the chunk to the world
         Instantiate(g);
+        Instantiate(liquids);
         currentWorld.world.Add(chunk);
 
 
@@ -264,26 +273,26 @@ public class World : MonoBehaviour {
     //Is needed fore compact code
     private IEnumerator loadChunks(Vector3 posPlayer, bool isPositive, System.Func<int, int, Vector3> func)
     {
-        Chunk[] chunks = new Chunk[22];
+        Chunk[] chunks = new Chunk[2 + 4 * viewDistance];
 
-        int a = isPositive ? 5 : -5;
+        int a = isPositive ? viewDistance : -5;
         int b = isPositive ? a - 1 : a + 1;
-        int a2 = isPositive ? -5 : 5;
+        int a2 = -a;
 
         //Load the chunks
-        for (int i = -5; i <= 5; i++)
+        for (int i = -viewDistance; i <= viewDistance; i++)
         {
             Chunk c = generateChunk(posPlayer + func(a, i));
-            chunks[i + 5] = c;
+            chunks[i + viewDistance] = c;
             Chunk d = findChunk(posPlayer + func(b, i));
-            chunks[i + 16] = d;
+            chunks[i + 1 + 3 * viewDistance] = d;
 
             //Remove the old chunks
             Chunk e = findChunk(posPlayer + func(a2, i));
             if (e != null)
             {
-                world.Remove(e);
-                Destroy(e.gameObject);
+                //world.Remove(e);
+                //Destroy(e.gameObject);
             } else
             {
                 print((posPlayer + func(a2, i)));

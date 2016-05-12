@@ -16,11 +16,10 @@ public class Chunk : MonoBehaviour {
     public Vector3 pos {get; set;}
     public BlockType[,,] blocks;
     public Mesh mesh{get; private set;}
+    public Mesh meshLiquids { get; private set; }
+    public GameObject liquids;
 
     //Important for the performance of the method BuildFace()
-    private List<Vector3> vertices;
-    private List<int> faces;
-    private List<Vector2> uvs;
     private int faceCount = 0;
 
     //Important for the performance of the method GetByte()
@@ -97,7 +96,7 @@ public class Chunk : MonoBehaviour {
         int y = (int)pos.y;
         int z = (int)pos.z;
 
-        if (blocks[x, y, z] == 0)
+        if (blocks[x, y, z] == BlockType.Air || Block.blockData[(int)blocks[x, y, z]].isLiquid)
         {
             blocks[x, y, z] = id;
             if(recalculateMesh)
@@ -188,19 +187,19 @@ public class Chunk : MonoBehaviour {
                     blocks[x, y, z] = BlockType.Stone;
                 }
 
-                //Generate Dirt
-                for (int y = (int)(noiseValue - 3); y < noiseValue; y++)
-                {
-                    blocks[x, y, z] = BlockType.Dirt;
-                }
+                //Generate Dirt with Grass or Sand
+                if (noiseValue > waterHeight) {
+                    for (int y = (int)(noiseValue - 3); y < noiseValue; y++)
+                        blocks[x, y, z] = BlockType.Dirt;
 
-                //Generate Grass
-                if(noiseValue > waterHeight)
+                    //Generate Grass
                     blocks[x, (int)noiseValue, z] = BlockType.Grass;
-
-                //Generate Sand in the water
-                if (noiseValue <= waterHeight)
-                    blocks[x, (int)noiseValue, z] = BlockType.Sand;
+                }
+                else
+                {
+                    for (int y = (int)(noiseValue - 2); y <= noiseValue; y++)
+                        blocks[x, y, z] = BlockType.Sand;
+                }
 
                 //Generate Water
                 if (noiseValue < waterHeight)
@@ -257,9 +256,17 @@ public class Chunk : MonoBehaviour {
         List<Vector2> uvs = new List<Vector2>();
         List<int> tris = new List<int>();
 
+        meshLiquids = new Mesh();
+        List<Vector3> vertsLiquids = new List<Vector3>();
+        List<Vector2> uvsLiquids = new List<Vector2>();
+        List<int> trisLiquids = new List<int>();
+
         //This variables are defined here for optimization
         int id;
         float xVector, yVector, zVector;
+        List<Vector3> selectedVerts;
+        List<Vector2> selectedUvs;
+        List<int> selectedtTris;
 
         //Create the mesh for every visible face
         for (int x = 0; x < size.x; x++)
@@ -279,26 +286,39 @@ public class Chunk : MonoBehaviour {
                     //Blockid
                     id = (int)blocks[x, y, z];
 
+                    if(Block.blockData[(int)blocks[x, y, z]].isLiquid)
+                    {
+                        selectedVerts = vertsLiquids;
+                        selectedUvs = uvsLiquids;
+                        selectedtTris = trisLiquids;
+                    }
+                    else
+                    {
+                        selectedVerts = verts;
+                        selectedUvs = uvs;
+                        selectedtTris = tris;
+                    }
+
                     // Left wall
                     if (IsTransparent(x - 1, y, z, x, y, z))
-                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.forward, false, ref verts, ref uvs, ref tris, Block.blockData[id].xLeft, Block.blockData[id].yLeft);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.forward, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xLeft, Block.blockData[id].yLeft);
                     // Right wall
                     if (IsTransparent(x + 1, y, z, x, y, z))
-                        BuildFace(id, new Vector3(xVector + 1, yVector, zVector), Vector3.up, Vector3.forward, true, ref verts, ref uvs, ref tris, Block.blockData[id].xRight, Block.blockData[id].yRight);
+                        BuildFace(id, new Vector3(xVector + 1, yVector, zVector), Vector3.up, Vector3.forward, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xRight, Block.blockData[id].yRight);
 
                     // Bottom wall
                     if (IsTransparent(x, y - 1, z, x, y, z))
-                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.forward, Vector3.right, false, ref verts, ref uvs, ref tris, Block.blockData[id].xBottom, Block.blockData[id].yBottom);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.forward, Vector3.right, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xBottom, Block.blockData[id].yBottom);
                     // Top wall
                     if (IsTransparent(x, y + 1, z, x, y, z))
-                        BuildFace(id, new Vector3(xVector, yVector + 1, zVector), Vector3.forward, Vector3.right, true, ref verts, ref uvs, ref tris, Block.blockData[id].xTop, Block.blockData[id].yTop);
+                        BuildFace(id, new Vector3(xVector, yVector + 1, zVector), Vector3.forward, Vector3.right, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xTop, Block.blockData[id].yTop);
 
                     // Back
                     if (IsTransparent(x, y, z - 1, x, y, z))
-                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.right, true, ref verts, ref uvs, ref tris, Block.blockData[id].xBack, Block.blockData[id].yBack);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.right, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xBack, Block.blockData[id].yBack);
                     // Front
                     if (IsTransparent(x, y, z + 1, x, y, z))
-                        BuildFace(id, new Vector3(xVector, yVector, zVector + 1), Vector3.up, Vector3.right, false, ref verts, ref uvs, ref tris, Block.blockData[id].xFront, Block.blockData[id].yFront);
+                        BuildFace(id, new Vector3(xVector, yVector, zVector + 1), Vector3.up, Vector3.right, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xFront, Block.blockData[id].yFront);
                 }
             }
         }
@@ -312,12 +332,18 @@ public class Chunk : MonoBehaviour {
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
 
+        meshLiquids.vertices = vertsLiquids.ToArray();
+        meshLiquids.uv = uvsLiquids.ToArray();
+        meshLiquids.triangles = trisLiquids.ToArray();
+        meshLiquids.RecalculateBounds();
+        meshLiquids.RecalculateNormals();
+
         //Add the mesh to the gameobject
         MeshFilter filter = gameObject.GetComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         gameObject.GetComponent<MeshCollider>().sharedMesh = mesh;
-        //print(watch2.ElapsedMilliseconds);
-        watch2.Reset();
+        MeshFilter filterLiquids = liquids.GetComponent<MeshFilter>();
+        filterLiquids.sharedMesh = meshLiquids;
 
         yield return 0;
 
