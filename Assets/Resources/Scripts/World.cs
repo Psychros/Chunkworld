@@ -275,7 +275,7 @@ public class World : MonoBehaviour {
     {
         Chunk[] chunks = new Chunk[2 + 4 * viewDistance];
 
-        int a = isPositive ? viewDistance : -5;
+        int a = isPositive ? viewDistance : -viewDistance;
         int b = isPositive ? a - 1 : a + 1;
         int a2 = -a;
 
@@ -291,12 +291,16 @@ public class World : MonoBehaviour {
             Chunk e = findChunk(posPlayer + func(a2, i));
             if (e != null)
             {
-                //world.Remove(e);
-                //Destroy(e.gameObject);
+                world.Remove(e);
+                Destroy(e.gameObject);
             } else
             {
                 print((posPlayer + func(a2, i)));
             }
+
+            //Wait for the next frame after 5 loaded chunks
+            if (i % 3 == 0)
+                yield return 0;
         }
 
         //Create the meshs
