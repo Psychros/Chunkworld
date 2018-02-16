@@ -18,9 +18,7 @@ public class Chunk : MonoBehaviour {
     public Mesh mesh{get; private set;}
     public Mesh meshLiquids { get; private set; }
     public GameObject liquids;
-
-    //Important for the performance of the method BuildFace()
-    private int faceCount = 0;
+    
 
     //Important for the performance of the method GetByte()
     private Chunk x1;
@@ -172,9 +170,9 @@ public class Chunk : MonoBehaviour {
             float noiseX = Mathf.Abs((x + (int)pos.x + offset.x) / size.x);
             for (int z = 0; z < size.z; z++)
             {
-                float noiseZ = Mathf.Abs((z + (int)pos.z + offset.z) / size.z);
+                float noiseZ = Mathf.Abs((z + (int)pos.z + offset.z) / size.z );
 
-                float noiseValue = Mathf.PerlinNoise(noiseX/4, noiseZ/4);
+                float noiseValue = Mathf.PerlinNoise(noiseX/8, noiseZ/8);
                 noiseValue *= (60 - minHeight);
                 noiseValue += minHeight;
 
@@ -300,29 +298,28 @@ public class Chunk : MonoBehaviour {
                     }
 
                     // Left wall
-                    if (IsTransparent(x - 1, y, z, x, y, z))
+                    if (IsTransparent(x - 1, y, z))
                         BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.forward, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xLeft, Block.blockData[id].yLeft);
                     // Right wall
-                    if (IsTransparent(x + 1, y, z, x, y, z))
+                    if (IsTransparent(x + 1, y, z))
                         BuildFace(id, new Vector3(xVector + 1, yVector, zVector), Vector3.up, Vector3.forward, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xRight, Block.blockData[id].yRight);
 
                     // Bottom wall
-                    if (IsTransparent(x, y - 1, z, x, y, z))
+                    if (IsTransparent(x, y - 1, z))
                         BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.forward, Vector3.right, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xBottom, Block.blockData[id].yBottom);
                     // Top wall
-                    if (IsTransparent(x, y + 1, z, x, y, z))
+                    if (IsTransparent(x, y + 1, z))
                         BuildFace(id, new Vector3(xVector, yVector + 1, zVector), Vector3.forward, Vector3.right, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xTop, Block.blockData[id].yTop);
 
                     // Back
-                    if (IsTransparent(x, y, z - 1, x, y, z))
+                    if (IsTransparent(x, y, z - 1))
                         BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.right, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xBack, Block.blockData[id].yBack);
                     // Front
-                    if (IsTransparent(x, y, z + 1, x, y, z))
+                    if (IsTransparent(x, y, z + 1))
                         BuildFace(id, new Vector3(xVector, yVector, zVector + 1), Vector3.up, Vector3.right, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xFront, Block.blockData[id].yFront);
                 }
             }
         }
-        watch2.Stop();
 
 
         //Add the information to the mesh
@@ -345,6 +342,9 @@ public class Chunk : MonoBehaviour {
         MeshFilter filterLiquids = liquids.GetComponent<MeshFilter>();
         filterLiquids.sharedMesh = meshLiquids;
 
+        watch2.Stop();
+        print(watch2.ElapsedMilliseconds);
+
         yield return 0;
 
     }
@@ -353,7 +353,6 @@ public class Chunk : MonoBehaviour {
     public virtual void BuildFace(int brick, Vector3 corner, Vector3 up, Vector3 right, bool reversed, ref List<Vector3> verts, ref List<Vector2> uvs, ref List<int> tris, float uvX, float uvY)
     {
         int index = verts.Count;
-        faceCount++;
 
         //Build the face
         verts.Add(corner);
@@ -397,12 +396,12 @@ public class Chunk : MonoBehaviour {
 
     //x/y/z: The Neighbourblock
     //x2´/y2/z2: The selected Block
-    public virtual bool IsTransparent(int x, int y, int z, int x2, int y2, int z2)
+    public virtual bool IsTransparent(int x, int y, int z)
     {
-        int brick = GetByte(x, y, z);
-        int brick2 = GetByte(x2, y2, z2);
+        int brick = GetBlockByte(x, y, z);
+        //int brick2 = GetBlockByte(x2, y2, z2);
 
-        if((brick == (int)BlockType.Air) || (Block.blockData[brick].isTransparent && brick != brick2))
+        if((brick == (int)BlockType.Air) || (Block.blockData[brick].isTransparent))
             return true;
         else
             return false;
@@ -413,13 +412,13 @@ public class Chunk : MonoBehaviour {
      * 1 is air or the worldborder 
      * 0 is a Block
      */
-    public virtual int GetByte(int x, int y, int z)
+    public virtual int GetBlockByte(int x, int y, int z)
     {
         //Left
         if((x < 0))
         {
             if (x1 != null)
-                return x1.GetByte((int)size.x - 1, y, z);
+                return x1.GetBlockByte((int)size.x - 1, y, z);
             else
                 return 1;
         }
@@ -427,7 +426,7 @@ public class Chunk : MonoBehaviour {
         else if ((x >= size.x))
         {
             if (x2 != null)
-                return x2.GetByte(0, y, z);
+                return x2.GetBlockByte(0, y, z);
             else
                 return 1;
         }
@@ -443,7 +442,7 @@ public class Chunk : MonoBehaviour {
         if((z < 0))
         {
             if (z1 != null)
-                return z1.GetByte(x, y, (int)size.z - 1);
+                return z1.GetBlockByte(x, y, (int)size.z - 1);
             else
                 return 1;
         }
@@ -451,12 +450,10 @@ public class Chunk : MonoBehaviour {
         else if ((z >= size.z))
         {
             if (z2 != null)
-               return z2.GetByte(x, y, 0);
+               return z2.GetBlockByte(x, y, 0);
             else
                 return 1;
         }
-        if ((x < 0) || (y < 0) || (z < 0) || (x >= size.x) || (y >= size.y) || (z >= size.z))
-            return 0;
 
         //No Border
         return (int)blocks[x, y, z];

@@ -63,7 +63,7 @@ public class World : MonoBehaviour {
             savePlayerPosition();
 
             //Load chunks if the player walks
-            testForChunkLoading();
+            //testForChunkLoading();
         }
         timerPlayerPosition += Time.deltaTime;
     }
@@ -134,7 +134,6 @@ public class World : MonoBehaviour {
         if (File.Exists(SaveManager.pathWorld + pos.ToString() + SaveManager.fileTypeWorld)){
             watch2.Start();
             chunk.loadChunk();
-            //chunk.saveChunk();
             watch2.Stop();
         }
         else
