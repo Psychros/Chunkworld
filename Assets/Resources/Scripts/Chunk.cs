@@ -298,24 +298,24 @@ public class Chunk : MonoBehaviour {
                     }
 
                     // Left wall
-                    if (IsTransparent(x - 1, y, z))
+                    if (IsTransparent(x - 1, y, z, x, y, z))
                         BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.forward, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xLeft, Block.blockData[id].yLeft);
                     // Right wall
-                    if (IsTransparent(x + 1, y, z))
+                    if (IsTransparent(x + 1, y, z, x, y, z))
                         BuildFace(id, new Vector3(xVector + 1, yVector, zVector), Vector3.up, Vector3.forward, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xRight, Block.blockData[id].yRight);
 
                     // Bottom wall
-                    if (IsTransparent(x, y - 1, z))
+                    if (IsTransparent(x, y - 1, z, x, y, z))
                         BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.forward, Vector3.right, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xBottom, Block.blockData[id].yBottom);
                     // Top wall
-                    if (IsTransparent(x, y + 1, z))
+                    if (IsTransparent(x, y + 1, z, x, y, z))
                         BuildFace(id, new Vector3(xVector, yVector + 1, zVector), Vector3.forward, Vector3.right, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xTop, Block.blockData[id].yTop);
 
                     // Back
-                    if (IsTransparent(x, y, z - 1))
+                    if (IsTransparent(x, y, z - 1, x, y, z))
                         BuildFace(id, new Vector3(xVector, yVector, zVector), Vector3.up, Vector3.right, true, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xBack, Block.blockData[id].yBack);
                     // Front
-                    if (IsTransparent(x, y, z + 1))
+                    if (IsTransparent(x, y, z + 1, x, y, z))
                         BuildFace(id, new Vector3(xVector, yVector, zVector + 1), Vector3.up, Vector3.right, false, ref selectedVerts, ref selectedUvs, ref selectedtTris, Block.blockData[id].xFront, Block.blockData[id].yFront);
                 }
             }
@@ -371,7 +371,7 @@ public class Chunk : MonoBehaviour {
         uvs.Add(new Vector2(x2, y1));
 
         //Add the faces
-        int tris0 = index + 0,
+        int tris0 = index,
             tris2 = index + 2;
         if (reversed)
         {
@@ -396,12 +396,12 @@ public class Chunk : MonoBehaviour {
 
     //x/y/z: The Neighbourblock
     //x2´/y2/z2: The selected Block
-    public virtual bool IsTransparent(int x, int y, int z)
+    public virtual bool IsTransparent(int x, int y, int z, int x2, int y2, int z2)
     {
         int brick = GetBlockByte(x, y, z);
-        //int brick2 = GetBlockByte(x2, y2, z2);
+        int brick2 = GetBlockByte(x2, y2, z2);
 
-        if((brick == (int)BlockType.Air) || (Block.blockData[brick].isTransparent))
+        if ((brick == (int)BlockType.Air) || (Block.blockData[brick].isTransparent && brick != brick2))
             return true;
         else
             return false;
